@@ -1,0 +1,651 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Minimum Spanning Tree Visualizer - DSA Buddy{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-project-diagram"></i> MST Operations</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Algorithm</label>
+                    <select id="algorithm" class="form-select">
+                        <option value="kruskal">Kruskal's Algorithm</option>
+                        <option value="prim">Prim's Algorithm</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-primary w-100" onclick="findMST()">Find MST</button>
+                <button class="btn btn-warning w-100 mt-2" onclick="clearGraph()">Clear Graph</button>
+                <button class="btn btn-secondary w-100 mt-2" onclick="loadSampleGraph()">Load Sample</button>
+                
+                <hr class="my-3">
+                <h6>Create New Graph</h6>
+                <div class="mb-3">
+                    <label class="form-label">Add Node</label>
+                    <div class="input-group">
+                        <input type="text" id="newNode" class="form-control form-control-sm" placeholder="Node (e.g., A)">
+                        <button class="btn btn-primary btn-sm" onclick="addNode()">Add</button>
+                    </div>
+                </div>
+                
+                <hr class="my-3">
+                <h6>Add Edge</h6>
+                <div class="row">
+                    <div class="col-4">
+                        <input type="text" id="fromNode" class="form-control form-control-sm" placeholder="From" maxlength="1">
+                    </div>
+                    <div class="col-4">
+                        <input type="text" id="toNode" class="form-control form-control-sm" placeholder="To" maxlength="1">
+                    </div>
+                    <div class="col-4">
+                        <input type="number" id="weight" class="form-control form-control-sm" placeholder="Weight" min="1">
+                    </div>
+                </div>
+                <button class="btn btn-info w-100 mt-2" onclick="addEdge()">Add Edge</button>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Animation Controls</h6>
+            </div>
+            <div class="card-body">
+                <div class="btn-group w-100 mb-3">
+                    <button class="btn btn-success btn-sm" onclick="playAnimation()"><i class="fas fa-play"></i></button>
+                    <button class="btn btn-warning btn-sm" onclick="pauseAnimation()"><i class="fas fa-pause"></i></button>
+                    <button class="btn btn-info btn-sm" onclick="stepForward()"><i class="fas fa-step-forward"></i></button>
+                    <button class="btn btn-secondary btn-sm" onclick="resetAnimation()"><i class="fas fa-undo"></i></button>
+                </div>
+                
+                <div>
+                    <span id="currentStep" class="badge bg-info">Step: 0</span>
+                    <span id="totalSteps" class="badge bg-secondary">Total: 0</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>MST Info</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Edges:</strong> <span id="edgeCount">0</span>
+                    </div>
+                    <div class="col-6">
+                        <strong>Weight:</strong> <span id="totalWeight">0</span>
+                    </div>
+                </div>
+                <small class="text-muted mt-2 d-block">
+                    <strong>Kruskal:</strong> O(E log E)<br>
+                    <strong>Prim:</strong> O(E log V)
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-eye"></i> Minimum Spanning Tree Visualization</h5>
+            </div>
+            <div class="card-body">
+                <div id="graphContainer" style="min-height: 500px; border: 1px solid #ddd; border-radius: 8px; position: relative;">
+                    <!-- Graph will be rendered here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Step Information</h6>
+            </div>
+            <div class="card-body">
+                <div id="stepInfo">
+                    <strong>Ready:</strong> Add edges or load a sample graph to find MST.
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Edge List</h6>
+            </div>
+            <div class="card-body">
+                <div id="edgeList">
+                    <strong>Edges:</strong> <span id="edgeListContent">None</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+class Graph {
+    constructor() {
+        this.nodes = new Set();
+        this.edges = [];
+        this.mstEdges = [];
+    }
+    
+    addEdge(from, to, weight) {
+        this.nodes.add(from);
+        this.nodes.add(to);
+        this.edges.push({ from, to, weight, id: from + '-' + to + '-' + weight });
+        this.updateEdgeList();
+    }
+    
+    clear() {
+        this.nodes.clear();
+        this.edges = [];
+        this.mstEdges = [];
+        this.updateEdgeList();
+    }
+    
+    updateEdgeList() {
+        const edgeListContent = document.getElementById('edgeListContent');
+        if (this.edges.length === 0) {
+            edgeListContent.textContent = 'None';
+        } else {
+            edgeListContent.textContent = this.edges.map(e => e.from + '-' + e.to + '(' + e.weight + ')').join(', ');
+        }
+    }
+    
+    kruskal() {
+        const steps = [];
+        const sortedEdges = this.edges.slice().sort((a, b) => a.weight - b.weight);
+        const parent = {};
+        const rank = {};
+        
+        for (let node of this.nodes) {
+            parent[node] = node;
+            rank[node] = 0;
+        }
+        
+        function find(x) {
+            if (parent[x] !== x) {
+                parent[x] = find(parent[x]);
+            }
+            return parent[x];
+        }
+        
+        function union(x, y) {
+            const rootX = find(x);
+            const rootY = find(y);
+            
+            if (rank[rootX] < rank[rootY]) {
+                parent[rootX] = rootY;
+            } else if (rank[rootX] > rank[rootY]) {
+                parent[rootY] = rootX;
+            } else {
+                parent[rootY] = rootX;
+                rank[rootX]++;
+            }
+        }
+        
+        steps.push({
+            type: 'start',
+            description: 'Kruskal: Sort edges by weight and use Union-Find',
+            mstEdges: []
+        });
+        
+        const mst = [];
+        let totalWeight = 0;
+        
+        for (let edge of sortedEdges) {
+            const rootFrom = find(edge.from);
+            const rootTo = find(edge.to);
+            
+            steps.push({
+                type: 'consider',
+                description: 'Consider edge ' + edge.from + '-' + edge.to + ' (weight: ' + edge.weight + ')',
+                currentEdge: edge,
+                mstEdges: mst.slice()
+            });
+            
+            if (rootFrom !== rootTo) {
+                union(edge.from, edge.to);
+                mst.push(edge);
+                totalWeight += edge.weight;
+                
+                steps.push({
+                    type: 'add',
+                    description: 'Add edge ' + edge.from + '-' + edge.to + ' to MST (no cycle formed)',
+                    currentEdge: edge,
+                    mstEdges: mst.slice(),
+                    totalWeight: totalWeight
+                });
+            } else {
+                steps.push({
+                    type: 'reject',
+                    description: 'Reject edge ' + edge.from + '-' + edge.to + ' (would create cycle)',
+                    currentEdge: edge,
+                    mstEdges: mst.slice()
+                });
+            }
+        }
+        
+        steps.push({
+            type: 'complete',
+            description: 'MST complete! Total weight: ' + totalWeight,
+            mstEdges: mst,
+            totalWeight: totalWeight
+        });
+        
+        return steps;
+    }
+    
+    prim() {
+        const steps = [];
+        if (this.nodes.size === 0) return steps;
+        
+        const startNode = Array.from(this.nodes)[0];
+        const inMST = new Set([startNode]);
+        const mst = [];
+        let totalWeight = 0;
+        
+        steps.push({
+            type: 'start',
+            description: 'Prim: Start with node ' + startNode,
+            inMST: new Set([startNode]),
+            mstEdges: []
+        });
+        
+        while (inMST.size < this.nodes.size) {
+            let minEdge = null;
+            let minWeight = Infinity;
+            
+            for (let edge of this.edges) {
+                const fromInMST = inMST.has(edge.from);
+                const toInMST = inMST.has(edge.to);
+                
+                if (fromInMST !== toInMST && edge.weight < minWeight) {
+                    minEdge = edge;
+                    minWeight = edge.weight;
+                }
+            }
+            
+            if (minEdge) {
+                const newNode = inMST.has(minEdge.from) ? minEdge.to : minEdge.from;
+                inMST.add(newNode);
+                mst.push(minEdge);
+                totalWeight += minEdge.weight;
+                
+                steps.push({
+                    type: 'add',
+                    description: 'Add edge ' + minEdge.from + '-' + minEdge.to + ' (weight: ' + minEdge.weight + '), include node ' + newNode,
+                    currentEdge: minEdge,
+                    inMST: new Set(inMST),
+                    mstEdges: mst.slice(),
+                    totalWeight: totalWeight
+                });
+            }
+        }
+        
+        steps.push({
+            type: 'complete',
+            description: 'MST complete! Total weight: ' + totalWeight,
+            mstEdges: mst,
+            totalWeight: totalWeight
+        });
+        
+        return steps;
+    }
+}
+
+let graph = new Graph();
+let animationSteps = [];
+let currentStep = 0;
+let isPlaying = false;
+let sampleIndex = 0;
+
+const sampleGraphs = [
+    [
+        { from: 'A', to: 'B', weight: 4 },
+        { from: 'A', to: 'C', weight: 2 },
+        { from: 'B', to: 'C', weight: 1 },
+        { from: 'B', to: 'D', weight: 5 },
+        { from: 'C', to: 'D', weight: 8 }
+    ],
+    [
+        { from: 'A', to: 'B', weight: 7 },
+        { from: 'A', to: 'D', weight: 5 },
+        { from: 'B', to: 'C', weight: 8 },
+        { from: 'B', to: 'D', weight: 9 },
+        { from: 'B', to: 'E', weight: 7 },
+        { from: 'C', to: 'E', weight: 5 },
+        { from: 'D', to: 'E', weight: 15 }
+    ]
+];
+
+function addEdge() {
+    const from = document.getElementById('fromNode').value.toUpperCase();
+    const to = document.getElementById('toNode').value.toUpperCase();
+    const weight = parseInt(document.getElementById('weight').value);
+    
+    if (!from || !to || isNaN(weight) || weight <= 0) {
+        alert('Please enter valid nodes and weight');
+        return;
+    }
+    
+    if (from === to) {
+        alert('Self-loops are not allowed');
+        return;
+    }
+    
+    const exists = graph.edges.some(e => 
+        (e.from === from && e.to === to) || (e.from === to && e.to === from)
+    );
+    
+    if (exists) {
+        alert('Edge already exists');
+        return;
+    }
+    
+    graph.addEdge(from, to, weight);
+    
+    document.getElementById('fromNode').value = '';
+    document.getElementById('toNode').value = '';
+    document.getElementById('weight').value = '';
+    
+    renderGraph();
+    updateGraphInfo();
+    showMessage('Added edge ' + from + '-' + to + ' with weight ' + weight);
+}
+
+function findMST() {
+    if (graph.edges.length === 0) {
+        alert('Please add some edges first');
+        return;
+    }
+    
+    const algorithm = document.getElementById('algorithm').value;
+    animationSteps = algorithm === 'kruskal' ? graph.kruskal() : graph.prim();
+    currentStep = 0;
+    
+    updateStepCounter();
+    showMessage(algorithm.toUpperCase() + ' algorithm ready. Click Play to start animation.');
+}
+
+function clearGraph() {
+    graph.clear();
+    animationSteps = [];
+    currentStep = 0;
+    renderGraph();
+    updateGraphInfo();
+    updateStepCounter();
+    showMessage('Graph cleared');
+}
+
+function loadSampleGraph() {
+    clearGraph();
+    
+    const sample = sampleGraphs[sampleIndex];
+    sampleIndex = (sampleIndex + 1) % sampleGraphs.length;
+    
+    sample.forEach(edge => {
+        graph.addEdge(edge.from, edge.to, edge.weight);
+    });
+    
+    renderGraph();
+    updateGraphInfo();
+    showMessage('Sample graph ' + sampleIndex + ' loaded');
+}
+
+function createNewGraph() {
+    const nodeNames = document.getElementById('nodeNames').value.trim();
+    if (!nodeNames) {
+        alert('Please enter node names');
+        return;
+    }
+    
+    clearGraph();
+    
+    const nodeList = nodeNames.split(',').map(n => n.trim().toUpperCase()).filter(n => n);
+    
+    if (nodeList.length === 0) {
+        alert('Please enter valid node names separated by commas');
+        return;
+    }
+    
+    nodeList.forEach(node => {
+        graph.nodes.add(node);
+    });
+    
+    document.getElementById('nodeNames').value = '';
+    renderGraph();
+    updateGraphInfo();
+    showMessage('Created new graph with nodes: ' + nodeList.join(', ') + '. Add edges to connect them.');
+}
+
+function addNode() {
+    const input = document.getElementById('newNode');
+    const nodeName = input.value.trim().toUpperCase();
+    
+    if (!nodeName) {
+        alert('Please enter a node name');
+        return;
+    }
+    
+    if (graph.nodes.has(nodeName)) {
+        alert('Node already exists');
+        return;
+    }
+    
+    graph.nodes.add(nodeName);
+    input.value = '';
+    
+    renderGraph();
+    updateGraphInfo();
+    showMessage('Added node ' + nodeName);
+}
+
+function renderGraph() {
+    const container = document.getElementById('graphContainer');
+    container.innerHTML = '';
+    
+    if (graph.nodes.size === 0) {
+        container.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">Empty graph - Add some edges to visualize</div>';
+        return;
+    }
+    
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '500');
+    svg.style.background = '#f8f9fa';
+    
+    const nodes = Array.from(graph.nodes);
+    const positions = {};
+    const centerX = 400;
+    const centerY = 250;
+    const radius = 150;
+    
+    // Position nodes in a circle
+    nodes.forEach((node, index) => {
+        const angle = (2 * Math.PI * index) / nodes.length;
+        positions[node] = {
+            x: centerX + radius * Math.cos(angle),
+            y: centerY + radius * Math.sin(angle)
+        };
+    });
+    
+    // Draw edges first
+    graph.edges.forEach(edge => {
+        const fromPos = positions[edge.from];
+        const toPos = positions[edge.to];
+        
+        if (fromPos && toPos) {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', fromPos.x);
+            line.setAttribute('y1', fromPos.y);
+            line.setAttribute('x2', toPos.x);
+            line.setAttribute('y2', toPos.y);
+            line.setAttribute('stroke', '#6c757d');
+            line.setAttribute('stroke-width', '2');
+            line.setAttribute('id', 'edge-' + edge.id);
+            svg.appendChild(line);
+            
+            const midX = (fromPos.x + toPos.x) / 2;
+            const midY = (fromPos.y + toPos.y) / 2;
+            
+            const weightText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            weightText.setAttribute('x', midX);
+            weightText.setAttribute('y', midY - 5);
+            weightText.setAttribute('text-anchor', 'middle');
+            weightText.setAttribute('fill', '#dc3545');
+            weightText.setAttribute('font-weight', 'bold');
+            weightText.setAttribute('font-size', '12');
+            weightText.textContent = edge.weight;
+            svg.appendChild(weightText);
+        }
+    });
+    
+    // Draw nodes on top
+    nodes.forEach(node => {
+        const pos = positions[node];
+        
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', pos.x);
+        circle.setAttribute('cy', pos.y);
+        circle.setAttribute('r', '20');
+        circle.setAttribute('fill', '#007bff');
+        circle.setAttribute('stroke', '#0056b3');
+        circle.setAttribute('stroke-width', '2');
+        circle.setAttribute('id', 'node-' + node);
+        
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', pos.x);
+        text.setAttribute('y', pos.y);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'central');
+        text.setAttribute('fill', 'white');
+        text.setAttribute('font-weight', 'bold');
+        text.setAttribute('font-size', '14');
+        text.textContent = node;
+        
+        svg.appendChild(circle);
+        svg.appendChild(text);
+    });
+    
+    container.appendChild(svg);
+}
+
+function highlightEdge(edge, color) {
+    const edgeElement = document.getElementById('edge-' + edge.id);
+    if (edgeElement) {
+        edgeElement.setAttribute('stroke', color);
+        edgeElement.setAttribute('stroke-width', '4');
+    }
+}
+
+function resetHighlights() {
+    document.querySelectorAll('[id^="edge-"]').forEach(edge => {
+        edge.setAttribute('stroke', '#6c757d');
+        edge.setAttribute('stroke-width', '2');
+    });
+    
+    document.querySelectorAll('[id^="node-"]').forEach(node => {
+        node.setAttribute('fill', '#007bff');
+    });
+}
+
+function updateGraphInfo() {
+    document.getElementById('edgeCount').textContent = graph.edges.length;
+    const totalWeight = graph.mstEdges.reduce((sum, edge) => sum + edge.weight, 0);
+    document.getElementById('totalWeight').textContent = totalWeight;
+}
+
+function showMessage(message) {
+    document.getElementById('stepInfo').innerHTML = '<strong>' + message + '</strong>';
+}
+
+function updateStepCounter() {
+    document.getElementById('currentStep').textContent = 'Step: ' + (currentStep + 1);
+    document.getElementById('totalSteps').textContent = 'Total: ' + animationSteps.length;
+}
+
+function playAnimation() {
+    if (animationSteps.length === 0) {
+        alert('Please find MST first');
+        return;
+    }
+    isPlaying = true;
+    runAnimation();
+}
+
+function runAnimation() {
+    if (!isPlaying || currentStep >= animationSteps.length) {
+        isPlaying = false;
+        if (currentStep >= animationSteps.length) {
+            showMessage('MST algorithm completed!');
+        }
+        return;
+    }
+    
+    const step = animationSteps[currentStep];
+    executeStep(step);
+    currentStep++;
+    updateStepCounter();
+    
+    setTimeout(() => {
+        if (isPlaying) runAnimation();
+    }, 2000);
+}
+
+function executeStep(step) {
+    showMessage(step.description);
+    resetHighlights();
+    
+    if (step.mstEdges) {
+        step.mstEdges.forEach(edge => {
+            highlightEdge(edge, '#28a745');
+        });
+    }
+    
+    if (step.currentEdge) {
+        const color = step.type === 'add' ? '#ffc107' : step.type === 'reject' ? '#dc3545' : '#17a2b8';
+        highlightEdge(step.currentEdge, color);
+    }
+    
+    if (step.totalWeight !== undefined) {
+        document.getElementById('totalWeight').textContent = step.totalWeight;
+    }
+}
+
+function pauseAnimation() {
+    isPlaying = false;
+}
+
+function stepForward() {
+    if (currentStep < animationSteps.length) {
+        executeStep(animationSteps[currentStep]);
+        currentStep++;
+        updateStepCounter();
+        
+        if (currentStep >= animationSteps.length) {
+            showMessage('MST algorithm completed!');
+        }
+    }
+}
+
+function resetAnimation() {
+    isPlaying = false;
+    currentStep = 0;
+    updateStepCounter();
+    resetHighlights();
+    showMessage('Animation reset');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    renderGraph();
+    updateGraphInfo();
+    showMessage('Ready to find minimum spanning tree. Add edges or load a sample graph.');
+});
+</script>
+{% endblock %}

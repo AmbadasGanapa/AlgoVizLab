@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sorting Visualizer - DSA Buddy{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-sort"></i> Sorting Controls</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Algorithm</label>
+                    <select id="algorithm" class="form-select">
+                        <option value="bubble_sort">Bubble Sort</option>
+                        <option value="selection_sort">Selection Sort</option>
+                        <option value="insertion_sort">Insertion Sort</option>
+                        <option value="merge_sort">Merge Sort</option>
+                        <option value="quick_sort">Quick Sort</option>
+                        <option value="heap_sort">Heap Sort</option>
+                        <option value="counting_sort">Counting Sort</option>
+                        <option value="radix_sort">Radix Sort</option>
+                        <option value="bucket_sort">Bucket Sort</option>
+                        <option value="shell_sort">Shell Sort</option>
+                        <option value="comb_sort">Comb Sort</option>
+                        <option value="pigeonhole_sort">Pigeonhole Sort</option>
+                        <option value="cycle_sort">Cycle Sort</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Array (comma-separated)</label>
+                    <input type="text" id="arrayInput" class="form-control" value="64,34,25,12,22,11,90" placeholder="e.g., 5,2,8,1,9">
+                </div>
+                
+                <button class="btn btn-warning w-100" onclick="startSorting()">Start Sorting</button>
+                <button class="btn btn-secondary w-100 mt-2" onclick="generateRandomArray()">Random Array</button>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Animation Controls</h6>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-success btn-sm" onclick="playAnimation()"><i class="fas fa-play"></i></button>
+                <button class="btn btn-warning btn-sm" onclick="pauseAnimation()"><i class="fas fa-pause"></i></button>
+                <button class="btn btn-info btn-sm" onclick="stepForward()"><i class="fas fa-step-forward"></i></button>
+                <button class="btn btn-secondary btn-sm" onclick="resetAnimation()"><i class="fas fa-undo"></i></button>
+                
+                <div class="mt-3">
+                    <label class="form-label">Speed</label>
+                    <input type="range" id="speedControl" class="form-range" min="100" max="2000" value="500">
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Complexity</h6>
+            </div>
+            <div class="card-body">
+                <div id="complexityInfo">
+                    <small>Select an algorithm to see complexity</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <h5><i class="fas fa-eye"></i> Sorting Visualization</h5>
+                <div>
+                    <span id="currentStep" class="badge bg-info">Step: 0</span>
+                    <span id="totalSteps" class="badge bg-secondary">Total: 0</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="sortingContainer" style="min-height: 400px;">
+                    <svg id="sortingSvg" width="100%" height="350"></svg>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Step Information</h6>
+            </div>
+            <div class="card-body">
+                <div id="stepInfo" class="text-muted">
+                    Start sorting to see step-by-step information
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/sorting-visualizer.js' %}"></script>
+{% endblock %}

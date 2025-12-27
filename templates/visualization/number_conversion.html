@@ -1,0 +1,366 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Number Conversion Visualizer - DSA Buddy{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-exchange-alt"></i> Number Conversion</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Input Number</label>
+                    <input type="text" id="inputNumber" class="form-control" placeholder="Enter number" value="42">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">From Base</label>
+                    <select id="fromBase" class="form-select">
+                        <option value="10">Decimal (10)</option>
+                        <option value="2">Binary (2)</option>
+                        <option value="8">Octal (8)</option>
+                        <option value="16">Hexadecimal (16)</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">To Base</label>
+                    <select id="toBase" class="form-select">
+                        <option value="2">Binary (2)</option>
+                        <option value="10">Decimal (10)</option>
+                        <option value="8">Octal (8)</option>
+                        <option value="16">Hexadecimal (16)</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-primary w-100" onclick="convertNumber()">Convert</button>
+                <button class="btn btn-warning w-100 mt-2" onclick="clearResults()">Clear</button>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Quick Conversions</h6>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-outline-primary btn-sm w-100 mb-2" onclick="quickConvert(255, 10)">255 (Dec)</button>
+                <button class="btn btn-outline-success btn-sm w-100 mb-2" onclick="quickConvert('1010', 2)">1010 (Bin)</button>
+                <button class="btn btn-outline-warning btn-sm w-100 mb-2" onclick="quickConvert('77', 8)">77 (Oct)</button>
+                <button class="btn btn-outline-info btn-sm w-100" onclick="quickConvert('FF', 16)">FF (Hex)</button>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>All Bases Result</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>Decimal:</strong> <span id="decResult">-</span>
+                </div>
+                <div class="mb-2">
+                    <strong>Binary:</strong> <span id="binResult">-</span>
+                </div>
+                <div class="mb-2">
+                    <strong>Octal:</strong> <span id="octResult">-</span>
+                </div>
+                <div>
+                    <strong>Hexadecimal:</strong> <span id="hexResult">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-eye"></i> Conversion Visualization</h5>
+            </div>
+            <div class="card-body">
+                <div id="conversionContainer" style="min-height: 400px; border: 1px solid #ddd; border-radius: 8px; padding: 20px;">
+                    Enter a number and select bases to see step-by-step conversion
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Step-by-Step Process</h6>
+            </div>
+            <div class="card-body">
+                <div id="stepProcess">
+                    <strong>Ready:</strong> Enter a number and click Convert to see the conversion process.
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Base Information</h6>
+            </div>
+            <div class="card-body">
+                <div id="baseInfo">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Binary (Base 2):</strong> Uses digits 0, 1<br>
+                            <strong>Octal (Base 8):</strong> Uses digits 0-7
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Decimal (Base 10):</strong> Uses digits 0-9<br>
+                            <strong>Hexadecimal (Base 16):</strong> Uses 0-9, A-F
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function convertNumber() {
+    const inputNumber = document.getElementById('inputNumber').value.trim();
+    const fromBase = parseInt(document.getElementById('fromBase').value);
+    const toBase = parseInt(document.getElementById('toBase').value);
+    
+    if (!inputNumber) {
+        alert('Please enter a number');
+        return;
+    }
+    
+    try {
+        // Convert input to decimal first
+        let decimalValue;
+        if (fromBase === 10) {
+            decimalValue = parseInt(inputNumber);
+        } else {
+            decimalValue = parseInt(inputNumber, fromBase);
+        }
+        
+        if (isNaN(decimalValue)) {
+            alert('Invalid number for the selected base');
+            return;
+        }
+        
+        // Convert to target base
+        let result;
+        if (toBase === 10) {
+            result = decimalValue.toString();
+        } else {
+            result = decimalValue.toString(toBase).toUpperCase();
+        }
+        
+        visualizeConversion(inputNumber, fromBase, toBase, decimalValue, result);
+        showStepByStep(inputNumber, fromBase, toBase, decimalValue, result);
+        updateAllBases(decimalValue);
+        
+    } catch (error) {
+        alert('Error in conversion: ' + error.message);
+    }
+}
+
+function visualizeConversion(input, fromBase, toBase, decimal, result) {
+    const container = document.getElementById('conversionContainer');
+    
+    let html = '<div class="text-center">';
+    html += '<h6>Number Conversion Process</h6>';
+    html += '<div class="conversion-flow mt-4">';
+    
+    // Input number
+    html += '<div class="conversion-step">';
+    html += '<div class="number-box input-box">' + input + '</div>';
+    html += '<div class="base-label">Base ' + fromBase + '</div>';
+    html += '</div>';
+    
+    // Arrow
+    html += '<div class="conversion-arrow">';
+    html += '<i class="fas fa-arrow-right"></i>';
+    html += '</div>';
+    
+    // Decimal intermediate (if needed)
+    if (fromBase !== 10 && toBase !== 10) {
+        html += '<div class="conversion-step">';
+        html += '<div class="number-box decimal-box">' + decimal + '</div>';
+        html += '<div class="base-label">Base 10 (Decimal)</div>';
+        html += '</div>';
+        
+        html += '<div class="conversion-arrow">';
+        html += '<i class="fas fa-arrow-right"></i>';
+        html += '</div>';
+    }
+    
+    // Result number
+    html += '<div class="conversion-step">';
+    html += '<div class="number-box result-box">' + result + '</div>';
+    html += '<div class="base-label">Base ' + toBase + '</div>';
+    html += '</div>';
+    
+    html += '</div>';
+    
+    // Show conversion table for decimal to other bases
+    if (fromBase === 10 && toBase !== 10) {
+        html += '<div class="conversion-table mt-4">';
+        html += '<h6>Division Method</h6>';
+        html += generateDivisionTable(decimal, toBase);
+        html += '</div>';
+    }
+    
+    html += '</div>';
+    
+    container.innerHTML = html;
+}
+
+function generateDivisionTable(decimal, base) {
+    let html = '<table class="table table-sm table-bordered">';
+    html += '<thead><tr><th>Division</th><th>Quotient</th><th>Remainder</th></tr></thead>';
+    html += '<tbody>';
+    
+    let num = decimal;
+    let remainders = [];
+    
+    while (num > 0) {
+        const quotient = Math.floor(num / base);
+        const remainder = num % base;
+        const remainderStr = remainder > 9 ? String.fromCharCode(65 + remainder - 10) : remainder.toString();
+        
+        html += '<tr>';
+        html += '<td>' + num + ' ÷ ' + base + '</td>';
+        html += '<td>' + quotient + '</td>';
+        html += '<td>' + remainderStr + '</td>';
+        html += '</tr>';
+        
+        remainders.unshift(remainderStr);
+        num = quotient;
+    }
+    
+    html += '</tbody></table>';
+    html += '<div class="mt-2"><strong>Result (read remainders from bottom to top): ' + remainders.join('') + '</strong></div>';
+    
+    return html;
+}
+
+function showStepByStep(input, fromBase, toBase, decimal, result) {
+    const container = document.getElementById('stepProcess');
+    
+    let steps = '<strong>Step-by-Step Conversion:</strong><br><br>';
+    
+    steps += '1. Input: ' + input + ' (Base ' + fromBase + ')<br>';
+    
+    if (fromBase !== 10) {
+        steps += '2. Convert to decimal:<br>';
+        steps += '   ' + input + ' (Base ' + fromBase + ') = ';
+        
+        const digits = input.split('').reverse();
+        let calculation = '';
+        for (let i = 0; i < digits.length; i++) {
+            const digit = digits[i];
+            const digitValue = isNaN(digit) ? digit.charCodeAt(0) - 65 + 10 : parseInt(digit);
+            if (i > 0) calculation += ' + ';
+            calculation += digitValue + '×' + fromBase + '^' + i;
+        }
+        steps += calculation + ' = ' + decimal + '<br>';
+    }
+    
+    if (toBase !== 10) {
+        steps += (fromBase !== 10 ? '3' : '2') + '. Convert decimal to base ' + toBase + ':<br>';
+        steps += '   Use repeated division by ' + toBase + '<br>';
+        steps += '   Read remainders from bottom to top<br>';
+    }
+    
+    steps += '<br><strong>Final Result:</strong> ' + result + ' (Base ' + toBase + ')';
+    
+    container.innerHTML = steps;
+}
+
+function updateAllBases(decimal) {
+    document.getElementById('decResult').textContent = decimal;
+    document.getElementById('binResult').textContent = decimal.toString(2);
+    document.getElementById('octResult').textContent = decimal.toString(8);
+    document.getElementById('hexResult').textContent = decimal.toString(16).toUpperCase();
+}
+
+function quickConvert(number, base) {
+    document.getElementById('inputNumber').value = number;
+    document.getElementById('fromBase').value = base;
+    convertNumber();
+}
+
+function clearResults() {
+    document.getElementById('conversionContainer').innerHTML = 'Enter a number and select bases to see step-by-step conversion';
+    document.getElementById('stepProcess').innerHTML = '<strong>Ready:</strong> Enter a number and click Convert to see the conversion process.';
+    
+    document.getElementById('decResult').textContent = '-';
+    document.getElementById('binResult').textContent = '-';
+    document.getElementById('octResult').textContent = '-';
+    document.getElementById('hexResult').textContent = '-';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    clearResults();
+});
+</script>
+
+<style>
+.conversion-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.conversion-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.number-box {
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    font-weight: bold;
+    min-width: 80px;
+    text-align: center;
+}
+
+.input-box {
+    background: #e3f2fd;
+    border: 2px solid #2196f3;
+    color: #1976d2;
+}
+
+.decimal-box {
+    background: #f3e5f5;
+    border: 2px solid #9c27b0;
+    color: #7b1fa2;
+}
+
+.result-box {
+    background: #e8f5e8;
+    border: 2px solid #4caf50;
+    color: #388e3c;
+}
+
+.base-label {
+    font-size: 12px;
+    color: #666;
+    font-weight: bold;
+}
+
+.conversion-arrow {
+    font-size: 24px;
+    color: #ff9800;
+}
+
+.conversion-table {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+}
+</style>
+{% endblock %}

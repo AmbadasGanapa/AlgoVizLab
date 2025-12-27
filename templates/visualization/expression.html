@@ -1,0 +1,712 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Expression Converter & Evaluator - AlgoViz Lab{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-calculator"></i> Expression Tools</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Mode</label>
+                    <select id="expressionMode" class="form-select" onchange="toggleMode()">
+                        <option value="evaluate">Evaluate Expression</option>
+                        <option value="convert">Convert Expression</option>
+                    </select>
+                </div>
+                
+                <div id="convertMode" style="display: none;">
+                    <div class="mb-3">
+                        <label class="form-label">Input Expression</label>
+                        <input type="text" id="inputExpression" class="form-control" placeholder="A + B * C" value="A + B * C">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Convert From</label>
+                        <select id="convertFrom" class="form-select" onchange="validateDropdowns()">
+                            <option value="infix">Infix</option>
+                            <option value="postfix">Postfix</option>
+                            <option value="prefix">Prefix</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Convert To</label>
+                        <select id="convertTo" class="form-select" onchange="validateDropdowns()">
+                            <option value="postfix">Postfix</option>
+                            <option value="infix">Infix</option>
+                            <option value="prefix">Prefix</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn btn-primary w-100" id="convertBtn" onclick="convertExpression()">Convert</button>
+                </div>
+                
+                <div id="evaluateMode">
+                    <div class="mb-3">
+                        <label class="form-label">Expression</label>
+                        <input type="text" id="evalExpression" class="form-control" placeholder="5 + 3 * 2 or 5 3 2 * + or + 5 * 3 2" value="5 + 3 * 2">
+                        <small class="form-text text-muted">Enter any expression (infix, postfix, or prefix)</small>
+                    </div>
+                    
+                    <button class="btn btn-success w-100" onclick="evaluateExpression()">Evaluate</button>
+                </div>
+                
+                <button class="btn btn-warning w-100 mt-2" onclick="clearAll()">Clear</button>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Animation Controls</h6>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-success btn-sm" onclick="playAnimation()"><i class="fas fa-play"></i></button>
+                <button class="btn btn-warning btn-sm" onclick="pauseAnimation()"><i class="fas fa-pause"></i></button>
+                <button class="btn btn-info btn-sm" onclick="stepForward()"><i class="fas fa-step-forward"></i></button>
+                <button class="btn btn-secondary btn-sm" onclick="resetAnimation()"><i class="fas fa-undo"></i></button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <h5><i class="fas fa-eye"></i> Expression Visualization</h5>
+                <div id="status" class="badge bg-secondary">Ready</div>
+            </div>
+            <div class="card-body">
+                <div id="expressionContainer" style="min-height: 300px;">
+                    <div class="text-center text-muted mt-5">
+                        <i class="fas fa-calculator fa-3x mb-3"></i>
+                        <p>Enter an expression to start visualization</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-layer-group"></i> Stack Visualization</h6>
+            </div>
+            <div class="card-body">
+                <div id="stackContainer" style="min-height: 150px;">
+                    <div class="text-center text-muted">
+                        <p>Stack operations will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Step Information</h6>
+            </div>
+            <div class="card-body">
+                <div id="stepInfo">
+                    <div class="text-muted">No steps to display</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Expression converter with proper algorithms
+let currentMode = 'evaluate';
+
+function toggleMode() {
+    currentMode = document.getElementById('expressionMode').value;
+    const convertMode = document.getElementById('convertMode');
+    const evaluateMode = document.getElementById('evaluateMode');
+    
+    if (currentMode === 'convert') {
+        convertMode.style.display = 'block';
+        evaluateMode.style.display = 'none';
+    } else {
+        convertMode.style.display = 'none';
+        evaluateMode.style.display = 'block';
+    }
+    clearAll();
+    validateDropdowns();
+}
+
+function validateDropdowns() {
+    const fromSelect = document.getElementById('convertFrom');
+    const toSelect = document.getElementById('convertTo');
+    const convertBtn = document.getElementById('convertBtn');
+    
+    if (fromSelect && toSelect && convertBtn) {
+        const fromValue = fromSelect.value;
+        const toValue = toSelect.value;
+        
+        if (fromValue === toValue) {
+            convertBtn.disabled = true;
+            convertBtn.textContent = 'Select Different Types';
+            convertBtn.className = 'btn btn-secondary w-100';
+        } else {
+            convertBtn.disabled = false;
+            convertBtn.textContent = 'Convert';
+            convertBtn.className = 'btn btn-primary w-100';
+        }
+    }
+}
+
+function convertExpression() {
+    const expression = document.getElementById('inputExpression').value.trim();
+    const fromType = document.getElementById('convertFrom').value;
+    const toType = document.getElementById('convertTo').value;
+    
+    if (!expression) {
+        alert('Please enter an expression');
+        return;
+    }
+    
+    if (fromType === toType) {
+        alert('Please select different conversion types');
+        return;
+    }
+    
+    document.getElementById('status').textContent = 'Converting...';
+    document.getElementById('status').className = 'badge bg-warning';
+    
+    try {
+        let result;
+        
+        if (fromType === 'infix' && toType === 'postfix') {
+            result = infixToPostfix(expression);
+        } else if (fromType === 'infix' && toType === 'prefix') {
+            result = infixToPrefix(expression);
+        } else if (fromType === 'postfix' && toType === 'infix') {
+            result = postfixToInfix(expression);
+        } else if (fromType === 'postfix' && toType === 'prefix') {
+            result = postfixToPrefix(expression);
+        } else if (fromType === 'prefix' && toType === 'infix') {
+            result = prefixToInfix(expression);
+        } else if (fromType === 'prefix' && toType === 'postfix') {
+            result = prefixToPostfix(expression);
+        }
+        
+        displayConversionResult(expression, result, fromType, toType);
+        document.getElementById('status').textContent = 'Complete';
+        document.getElementById('status').className = 'badge bg-success';
+        
+    } catch (error) {
+        alert('Error in conversion: ' + error.message);
+        document.getElementById('status').textContent = 'Error';
+        document.getElementById('status').className = 'badge bg-danger';
+    }
+}
+
+function evaluateExpression() {
+    const expression = document.getElementById('evalExpression').value.trim();
+    
+    if (!expression) {
+        alert('Please enter an expression');
+        return;
+    }
+    
+    document.getElementById('status').textContent = 'Evaluating...';
+    document.getElementById('status').className = 'badge bg-warning';
+    
+    try {
+        const detectedType = detectExpressionType(expression);
+        let result;
+        
+        // Call the appropriate function based on detected type
+        if (detectedType === 'prefix') {
+            result = evaluatePrefixExpression(expression);
+        } else if (detectedType === 'postfix') {
+            result = evaluatePostfixExpression(expression);
+        } else {
+            result = evaluateInfixExpression(expression);
+        }
+        
+        displayEvaluationResult(expression, result, detectedType);
+        document.getElementById('status').textContent = 'Complete';
+        document.getElementById('status').className = 'badge bg-success';
+        
+    } catch (error) {
+        alert('Error in evaluation: ' + error.message);
+        document.getElementById('status').textContent = 'Error';
+        document.getElementById('status').className = 'badge bg-danger';
+    }
+}
+
+// Conversion algorithms
+function infixToPostfix(infix) {
+    const precedence = {'+': 1, '-': 1, '*': 2, '/': 2, '^': 3};
+    const stack = [];
+    const result = [];
+    const tokens = tokenize(infix);
+    
+    for (let token of tokens) {
+        if (isOperand(token)) {
+            result.push(token);
+        } else if (token === '(') {
+            stack.push(token);
+        } else if (token === ')') {
+            while (stack.length && stack[stack.length - 1] !== '(') {
+                result.push(stack.pop());
+            }
+            if (stack.length) stack.pop();
+        } else if (isOperator(token)) {
+            while (stack.length && 
+                   stack[stack.length - 1] !== '(' && 
+                   precedence[stack[stack.length - 1]] >= precedence[token]) {
+                result.push(stack.pop());
+            }
+            stack.push(token);
+        }
+    }
+    
+    while (stack.length) {
+        result.push(stack.pop());
+    }
+    
+    return result.join('');
+}
+
+function infixToPrefix(infix) {
+    const precedence = {'+': 1, '-': 1, '*': 2, '/': 2, '^': 3};
+    const stack = [];
+    const result = [];
+    const tokens = tokenize(infix).reverse();
+    
+    for (let token of tokens) {
+        if (isOperand(token)) {
+            result.push(token);
+        } else if (token === ')') {
+            stack.push(token);
+        } else if (token === '(') {
+            while (stack.length && stack[stack.length - 1] !== ')') {
+                result.push(stack.pop());
+            }
+            if (stack.length) stack.pop();
+        } else if (isOperator(token)) {
+            while (stack.length && 
+                   stack[stack.length - 1] !== ')' && 
+                   precedence[stack[stack.length - 1]] > precedence[token]) {
+                result.push(stack.pop());
+            }
+            stack.push(token);
+        }
+    }
+    
+    while (stack.length) {
+        result.push(stack.pop());
+    }
+    
+    return result.reverse().join('');
+}
+
+function postfixToInfix(postfix) {
+    const stack = [];
+    
+    for (let i = 0; i < postfix.length; i++) {
+        const char = postfix[i];
+        
+        if (isOperand(char)) {
+            stack.push(char);
+        } else if (isOperator(char)) {
+            // Pop two operands (second operand first, then first operand)
+            const op2 = stack.pop();
+            const op1 = stack.pop();
+            
+            // Create infix expression with parentheses
+            const expr = `(${op1}${char}${op2})`;
+            stack.push(expr);
+        }
+    }
+    
+    return stack[0] || '';
+}
+
+function postfixToPrefix(postfix) {
+    const stack = [];
+    
+    for (let i = 0; i < postfix.length; i++) {
+        const char = postfix[i];
+        
+        if (isOperand(char)) {
+            stack.push(char);
+        } else if (isOperator(char)) {
+            // Pop two operands (second operand first, then first operand)
+            const op2 = stack.pop();
+            const op1 = stack.pop();
+            
+            // Create prefix expression with spaces
+            const expr = `${char} ${op1} ${op2}`;
+            stack.push(expr);
+        }
+    }
+    
+    return stack[0] || '';
+}
+
+function prefixToInfix(prefix) {
+    const stack = [];
+    const tokens = prefix.split('').reverse();
+    
+    for (let token of tokens) {
+        if (isOperand(token)) {
+            stack.push(token);
+        } else if (isOperator(token)) {
+            const a = stack.pop();
+            const b = stack.pop();
+            stack.push(`(${a}${token}${b})`);
+        }
+    }
+    
+    return stack[0] || '';
+}
+
+function prefixToPostfix(prefix) {
+    const stack = [];
+    const tokens = prefix.split('').reverse();
+    
+    for (let token of tokens) {
+        if (isOperand(token)) {
+            stack.push(token);
+        } else if (isOperator(token)) {
+            const a = stack.pop();
+            const b = stack.pop();
+            stack.push(`${a}${b}${token}`);
+        }
+    }
+    
+    return stack[0] || '';
+}
+
+// Three separate evaluation functions with stack visualization
+function evaluateInfixExpression(expression) {
+    try {
+        updateStepInfo('Converting infix to postfix, then evaluating...');
+        
+        // Convert infix to postfix first
+        const postfix = infixToPostfixWithSteps(expression);
+        updateStepInfo(`Converted "${expression}" to postfix: "${postfix}"<br>Now evaluating postfix...`);
+        
+        // Evaluate the postfix expression with visualization
+        return evaluatePostfixWithVisualization(postfix);
+    } catch (error) {
+        throw new Error('Invalid infix expression');
+    }
+}
+
+function infixToPostfixWithSteps(infix) {
+    const precedence = {'+': 1, '-': 1, '*': 2, '/': 2};
+    const stack = [];
+    const output = [];
+    const tokens = tokenize(infix);
+    
+    for (let token of tokens) {
+        if (isNumber(token)) {
+            output.push(token);
+        } else if (token === '(') {
+            stack.push(token);
+        } else if (token === ')') {
+            while (stack.length && stack[stack.length - 1] !== '(') {
+                output.push(stack.pop());
+            }
+            if (stack.length) stack.pop();
+        } else if (isOperator(token)) {
+            while (stack.length && 
+                   stack[stack.length - 1] !== '(' && 
+                   precedence[stack[stack.length - 1]] >= precedence[token]) {
+                output.push(stack.pop());
+            }
+            stack.push(token);
+        }
+    }
+    
+    while (stack.length) {
+        output.push(stack.pop());
+    }
+    
+    return output.join(' ');
+}
+
+function evaluatePostfixWithVisualization(postfix) {
+    const stack = [];
+    const tokens = postfix.split(' ');
+    let steps = [];
+    
+    for (let token of tokens) {
+        if (isNumber(token)) {
+            stack.push(parseFloat(token));
+            steps.push(`Push ${token}`);
+            updateStackVisualization([...stack]);
+        } else if (isOperator(token)) {
+            const b = stack.pop();
+            const a = stack.pop();
+            const result = calculate(a, b, token);
+            stack.push(result);
+            steps.push(`Pop ${b} and ${a}, calculate ${a} ${token} ${b} = ${result}`);
+            updateStackVisualization([...stack]);
+        }
+    }
+    
+    updateStepInfo('Postfix evaluation steps:<br>' + steps.join('<br>'));
+    return stack[0];
+}
+
+function evaluatePostfixExpression(expression) {
+    const stack = [];
+    const tokens = expression.trim().split(/\s+/);
+    let steps = [];
+    
+    updateStepInfo('Starting postfix evaluation...');
+    
+    for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i];
+        
+        if (isNumber(token)) {
+            stack.push(parseFloat(token));
+            steps.push(`Push ${token} onto stack`);
+            updateStackVisualization([...stack]);
+        } else if (isOperator(token)) {
+            if (stack.length < 2) {
+                throw new Error('Invalid postfix expression');
+            }
+            const b = stack.pop();
+            const a = stack.pop();
+            const result = calculate(a, b, token);
+            stack.push(result);
+            steps.push(`Pop ${b} and ${a}, calculate ${a} ${token} ${b} = ${result}, push ${result}`);
+            updateStackVisualization([...stack]);
+        }
+    }
+    
+    updateStepInfo(steps.join('<br>'));
+    
+    if (stack.length !== 1) {
+        throw new Error('Invalid postfix expression');
+    }
+    return stack[0];
+}
+
+function evaluatePrefixExpression(expression) {
+    const stack = [];
+    const tokens = expression.trim().split(/\s+/).reverse();
+    let steps = [];
+    
+    updateStepInfo('Starting prefix evaluation (processing right to left)...');
+    
+    for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i];
+        
+        if (isNumber(token)) {
+            stack.push(parseFloat(token));
+            steps.push(`Push ${token} onto stack`);
+            updateStackVisualization([...stack]);
+        } else if (isOperator(token)) {
+            if (stack.length < 2) {
+                throw new Error('Invalid prefix expression');
+            }
+            const a = stack.pop();
+            const b = stack.pop();
+            const result = calculate(a, b, token);
+            stack.push(result);
+            steps.push(`Pop ${a} and ${b}, calculate ${a} ${token} ${b} = ${result}, push ${result}`);
+            updateStackVisualization([...stack]);
+        }
+    }
+    
+    updateStepInfo(steps.join('<br>'));
+    
+    if (stack.length !== 1) {
+        throw new Error('Invalid prefix expression');
+    }
+    return stack[0];
+}
+
+// Stack visualization functions
+function updateStackVisualization(stack) {
+    const container = document.getElementById('stackContainer');
+    if (!container) return;
+    
+    if (stack.length === 0) {
+        container.innerHTML = '<div class="text-center text-muted"><p>Stack is empty</p></div>';
+        return;
+    }
+    
+    let stackHTML = '<div class="d-flex justify-content-center align-items-end" style="height: 120px;">';
+    
+    for (let i = 0; i < stack.length; i++) {
+        const isTop = i === stack.length - 1;
+        stackHTML += `
+            <div class="stack-item-viz ${isTop ? 'stack-top' : ''}" style="margin: 2px;">
+                <div class="stack-value">${stack[i]}</div>
+                ${isTop ? '<div class="stack-label">TOP</div>' : ''}
+            </div>
+        `;
+    }
+    
+    stackHTML += '</div>';
+    
+    const style = `
+        <style>
+        .stack-item-viz {
+            width: 50px;
+            height: 40px;
+            background: #007bff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #0056b3;
+            border-radius: 5px;
+            font-weight: bold;
+            position: relative;
+        }
+        .stack-top {
+            background: #28a745;
+            border-color: #1e7e34;
+        }
+        .stack-label {
+            position: absolute;
+            top: -20px;
+            font-size: 10px;
+            color: #28a745;
+            font-weight: bold;
+        }
+        </style>
+    `;
+    
+    container.innerHTML = style + stackHTML;
+}
+
+function updateStepInfo(info) {
+    const stepContainer = document.getElementById('stepInfo');
+    if (stepContainer) {
+        stepContainer.innerHTML = `<div class="alert alert-info">${info}</div>`;
+    }
+}
+
+// Simple expression type detection
+function detectExpressionType(expression) {
+    const tokens = expression.trim().split(/\s+/);
+    
+    // If first token is an operator, it's PREFIX
+    if (isOperator(tokens[0])) {
+        return 'prefix';
+    }
+    
+    // If last token is an operator, it's POSTFIX
+    if (isOperator(tokens[tokens.length - 1])) {
+        return 'postfix';
+    }
+    
+    // Otherwise, it's INFIX
+    return 'infix';
+}
+
+// Utility functions
+function tokenize(expression) {
+    // Handle special characters like ∗ and convert to standard operators
+    const normalized = expression.replace(/∗/g, '*').replace(/−/g, '-');
+    return normalized.match(/[A-Za-z0-9]+|[+\-*/^()]/g) || [];
+}
+
+
+
+function isOperand(token) {
+    return /^[A-Za-z0-9]+$/.test(token);
+}
+
+function isOperator(token) {
+    return ['+', '-', '*', '/', '^'].includes(token);
+}
+
+function isNumber(token) {
+    return !isNaN(parseFloat(token));
+}
+
+function calculate(a, b, operator) {
+    switch (operator) {
+        case '+': return a + b;
+        case '-': return a - b;
+        case '*': return a * b;
+        case '/': return a / b;
+        case '^': return Math.pow(a, b);
+        default: throw new Error('Unknown operator: ' + operator);
+    }
+}
+
+function displayConversionResult(input, result, fromType, toType) {
+    const container = document.getElementById('expressionContainer');
+    container.innerHTML = `
+        <div class="text-center">
+            <h4>Conversion Result</h4>
+            <div class="alert alert-info">
+                <strong>Input (${fromType.toUpperCase()}):</strong> ${input}
+            </div>
+            <div class="alert alert-success">
+                <strong>Output (${toType.toUpperCase()}):</strong> ${result}
+            </div>
+        </div>
+    `;
+}
+
+function displayEvaluationResult(expression, result, type) {
+    const container = document.getElementById('expressionContainer');
+    container.innerHTML = `
+        <div class="text-center">
+            <h4>Evaluation Result</h4>
+            <div class="alert alert-info">
+                <strong>Expression (${type.toUpperCase()}):</strong> ${expression}
+            </div>
+            <div class="alert alert-success">
+                <strong>Result:</strong> ${result}
+            </div>
+        </div>
+    `;
+}
+
+function clearAll() {
+    document.getElementById('expressionContainer').innerHTML = `
+        <div class="text-center text-muted mt-5">
+            <i class="fas fa-calculator fa-3x mb-3"></i>
+            <p>Enter an expression to start visualization</p>
+        </div>
+    `;
+    document.getElementById('stackContainer').innerHTML = `
+        <div class="text-center text-muted">
+            <p>Stack operations will appear here</p>
+        </div>
+    `;
+    document.getElementById('stepInfo').innerHTML = '<div class="text-muted">No steps to display</div>';
+    document.getElementById('status').textContent = 'Ready';
+    document.getElementById('status').className = 'badge bg-secondary';
+}
+
+function playAnimation() {
+    // Placeholder for animation controls
+    console.log('Play animation');
+}
+
+function pauseAnimation() {
+    console.log('Pause animation');
+}
+
+function stepForward() {
+    console.log('Step forward');
+}
+
+function resetAnimation() {
+    clearAll();
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    toggleMode();
+});
+</script>
+{% endblock %}

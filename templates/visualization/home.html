@@ -1,0 +1,565 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section text-center mb-5">
+    <div class="hero-content">
+        <h1 class="hero-title">AlgoViz Lab</h1>
+        <p class="hero-tagline">Making Data Structures and Algorithms Intuitive</p>
+        <div class="hero-animation">
+            <div class="floating-elements">
+                <div class="element element-1"></div>
+                <div class="element element-2"></div>
+                <div class="element element-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm interactive-card" data-structure="array">
+            <div class="card-body text-center">
+                <div class="visual-container mb-3">
+                    <div class="array-visual">
+                        <div class="array-box">5</div>
+                        <div class="array-box">3</div>
+                        <div class="array-box">8</div>
+                        <div class="array-box">1</div>
+                        <div class="array-box empty">?</div>
+                    </div>
+                    <div class="memory-representation">
+                        <small class="text-muted">Memory: [0x100][0x104][0x108][0x10C][0x110]</small>
+                    </div>
+                </div>
+                <h5 class="card-title">Array</h5>
+                <p class="card-text">Visualize array operations like insertion, deletion, and searching with animated steps.</p>
+                <a href="{% url 'array_visualizer' %}" class="btn btn-primary">Explore Arrays</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm interactive-card" data-structure="linkedlist">
+            <div class="card-body text-center">
+                <div class="visual-container mb-3">
+                    <div class="linkedlist-visual">
+                        <div class="node-container">
+                            <div class="ll-node">10</div>
+                            <div class="arrow">→</div>
+                            <div class="ll-node">20</div>
+                            <div class="arrow">→</div>
+                            <div class="ll-node">30</div>
+                            <div class="arrow">→</div>
+                            <div class="null-pointer">NULL</div>
+                        </div>
+                    </div>
+                    <div class="memory-representation">
+                        <small class="text-muted">Pointers: 0x200→0x300→0x400→NULL</small>
+                    </div>
+                </div>
+                <h5 class="card-title">Linked List</h5>
+                <p class="card-text">Interactive linked list with node connections and pointer animations.</p>
+                <a href="{% url 'linked_list_visualizer' %}" class="btn btn-success">Explore Linked Lists</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm interactive-card" data-structure="stack">
+            <div class="card-body text-center">
+                <div class="visual-container mb-3">
+                    <div class="stack-visual">
+                        <div class="stack-container">
+                            <div class="stack-item top">30</div>
+                            <div class="stack-item">20</div>
+                            <div class="stack-item">10</div>
+                            <div class="stack-base">Base</div>
+                        </div>
+                        <div class="stack-pointer">← TOP</div>
+                    </div>
+                    <div class="memory-representation">
+                        <small class="text-muted">LIFO | Push/Pop: O(1) | Size: 3</small>
+                    </div>
+                </div>
+                <h5 class="card-title">Stack</h5>
+                <p class="card-text">LIFO data structure with push, pop, and peek operations.</p>
+                <a href="{% url 'stack_visualizer' %}" class="btn btn-primary">Explore Stack</a>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm interactive-card" data-structure="queue">
+            <div class="card-body text-center">
+                <div class="visual-container mb-3">
+                    <div class="queue-visual">
+                        <div class="queue-container">
+                            <div class="queue-label">FRONT</div>
+                            <div class="queue-item">10</div>
+                            <div class="queue-item">20</div>
+                            <div class="queue-item">30</div>
+                            <div class="queue-label">REAR</div>
+                        </div>
+                        <div class="queue-arrows">
+                            <span class="dequeue-arrow">← Dequeue</span>
+                            <span class="enqueue-arrow">Enqueue →</span>
+                        </div>
+                    </div>
+                    <div class="memory-representation">
+                        <small class="text-muted">FIFO | Enqueue/Dequeue: O(1) | Size: 3</small>
+                    </div>
+                </div>
+                <h5 class="card-title">Queue</h5>
+                <p class="card-text">FIFO data structure with enqueue, dequeue, and front operations.</p>
+                <a href="{% url 'queue_visualizer' %}" class="btn btn-success">Explore Queue</a>
+            </div>
+        </div>
+    </div>
+
+     <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm interactive-card" data-structure="recursion">
+            <div class="card-body text-center">
+                <div class="visual-container mb-3">
+                    <div class="recursion-visual">
+                        <i class="fas fa-layer-group recursion-icon"></i>
+                    </div>
+                    <div class="memory-representation">
+                        <small class="text-muted">Call Stack | Base Case | O(n) space</small>
+                    </div>
+                </div>
+                <h5 class="card-title">Recursion</h5>
+                <p class="card-text">Visualize recursive function calls with call stack and step-by-step execution.</p>
+                <a href="{% url 'recursion_visualizer' %}" class="btn btn-primary">Explore Recursion</a>
+            </div>
+        </div>
+    </div>
+
+
+
+  <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm interactive-card" data-structure="expression">
+            <div class="card-body text-center">
+                <div class="visual-container mb-3">
+                    <div class="expression-visual">
+                        <div class="expression-conversion">
+                            <div class="infix-expr">A + B * C</div>
+                            <div class="conversion-arrow">↓</div>
+                            <div class="postfix-expr">A B C * +</div>
+                        </div>
+                        <div class="stack-simulation">
+                            <div class="mini-stack">
+                                <div class="mini-stack-item">+</div>
+                                <div class="mini-stack-item">*</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="memory-representation">
+                        <small class="text-muted">Infix→Postfix | Stack-based | O(n)</small>
+                    </div>
+                </div>
+                <h5 class="card-title">Expression Conversion</h5>
+                <p class="card-text">Convert between infix, postfix, and prefix expressions with step-by-step visualization.</p>
+                <a href="{% url 'expression_visualizer' %}" class="btn btn-info">Explore Expressions</a>
+            </div>
+        </div>
+    </div>
+    
+     <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm interactive-card" data-structure="evaluation">
+            <div class="card-body text-center">
+                <div class="visual-container mb-3">
+                    <div class="evaluation-visual">
+                        <div class="expression-eval">
+                            <div class="eval-expr">5 3 + 2 *</div>
+                            <div class="eval-steps">
+                                <div class="eval-step">5 3 → 8</div>
+                                <div class="eval-step">8 2 → 16</div>
+                            </div>
+                        </div>
+                        <div class="eval-stack">
+                            <div class="eval-stack-item">16</div>
+                        </div>
+                    </div>
+                    <div class="memory-representation">
+                        <small class="text-muted">Postfix Evaluation | Stack: O(n) | Result: 16</small>
+                    </div>
+                </div>
+                <h5 class="card-title">Expression Evaluation</h5>
+                <p class="card-text">Evaluate postfix and prefix expressions using stack-based algorithms.</p>
+                <a href="{% url 'expression_visualizer' %}" class="btn btn-success">Explore Evaluation</a>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm interactive-card" data-structure="tree">
+            <div class="card-body text-center">
+                <div class="visual-container mb-3">
+                    <div class="tree-visual-proper">
+                        <!-- Root -->
+                        <div class="tree-root">
+                            <div class="tree-node-proper">50</div>
+                        </div>
+                        
+                        <!-- Level 1 -->
+                        <div class="tree-level-split">
+                            <div class="tree-left-half">
+                                <div class="tree-node-proper">30</div>
+                            </div>
+                            <div class="tree-right-half">
+                                <div class="tree-node-proper">70</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Level 2 -->
+                        <div class="tree-level-quarters">
+                            <div class="tree-quarter">
+                                <div class="tree-node-proper">20</div>
+                            </div>
+                            <div class="tree-quarter">
+                                <div class="tree-node-proper">40</div>
+                            </div>
+                            <div class="tree-quarter">
+                                <div class="tree-node-proper">60</div>
+                            </div>
+                            <div class="tree-quarter">
+                                <div class="tree-node-proper">80</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="memory-representation">
+                        <small class="text-muted">BST | Height: 2 | Nodes: 7 | Balanced: Yes</small>
+                    </div>
+                </div>
+                <h5 class="card-title">Binary Tree</h5>
+                <p class="card-text">Build and visualize binary search trees with insertion and traversal animations.</p>
+                <a href="{% url 'binary_tree_visualizer' %}" class="btn btn-info">Explore Trees</a>
+            </div>
+        </div>
+    </div>
+
+    
+       <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm interactive-card" data-structure="avl">
+            <div class="card-body text-center">
+                <div class="visual-container mb-3">
+                    <div class="avl-visual">
+                        <i class="fas fa-balance-scale avl-icon"></i>
+                    </div>
+                    <div class="memory-representation">
+                        <small class="text-muted">Self-Balancing | Rotations | O(log n)</small>
+                    </div>
+                </div>
+                <h5 class="card-title">AVL Tree</h5>
+                <p class="card-text">Self-balancing binary search tree with automatic rotations and balance factors.</p>
+                <a href="{% url 'avl_tree_visualizer' %}" class="btn btn-warning">Explore AVL</a>
+            </div>
+        </div>
+    </div>
+
+  
+
+       <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm interactive-card" data-structure="mst">
+            <div class="card-body text-center">
+                <div class="visual-container mb-3">
+                    <div class="mst-visual">
+                        <i class="fas fa-project-diagram mst-icon"></i>
+                    </div>
+                    <div class="memory-representation">
+                        <small class="text-muted">Kruskal | Prim | O(E log E)</small>
+                    </div>
+                </div>
+                <h5 class="card-title">Minimum Spanning Tree</h5>
+                <p class="card-text">Find minimum spanning tree using Kruskal's and Prim's algorithms with visualization.</p>
+                <a href="{% url 'mst_visualizer' %}" class="btn btn-success">Explore MST</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm interactive-card" data-structure="graph">
+            <div class="card-body text-center">
+                <div class="visual-container mb-3">
+                    <div class="graph-visual">
+                        <div class="graph-container">
+                            <div class="graph-node" style="top: 10px; left: 50px;">A</div>
+                            <div class="graph-node" style="top: 40px; left: 20px;">B</div>
+                            <div class="graph-node" style="top: 40px; left: 80px;">C</div>
+                            <div class="graph-node" style="top: 70px; left: 50px;">D</div>
+                            <div class="graph-edges">
+                                <div class="edge" data-from="A" data-to="B"></div>
+                                <div class="edge" data-from="A" data-to="C"></div>
+                                <div class="edge" data-from="B" data-to="D"></div>
+                                <div class="edge" data-from="C" data-to="D"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="memory-representation">
+                        <small class="text-muted">Create & Traverse | BFS: O(V+E) | DFS: O(V+E)</small>
+                    </div>
+                </div>
+                <h5 class="card-title">Graph Creation & Traversal</h5>
+                <p class="card-text">Create custom graphs and explore BFS and DFS algorithms with interactive visualization.</p>
+                <a href="{% url 'graph_visualizer' %}" class="btn btn-secondary">Explore Graphs</a>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm interactive-card" data-structure="sorting">
+            <div class="card-body text-center">
+                <div class="visual-container mb-3">
+                    <div class="sorting-visual">
+                        <div class="bar-chart">
+                            <div class="sort-bar" style="height: 60px;">8</div>
+                            <div class="sort-bar" style="height: 30px;">3</div>
+                            <div class="sort-bar" style="height: 80px;">12</div>
+                            <div class="sort-bar" style="height: 45px;">6</div>
+                            <div class="sort-bar" style="height: 25px;">2</div>
+                        </div>
+                    </div>
+                    <div class="memory-representation">
+                        <small class="text-muted">Comparisons: O(n²) | Swaps: O(n²)</small>
+                    </div>
+                </div>
+                <h5 class="card-title">Sorting Algorithms</h5>
+                <p class="card-text">Watch sorting algorithms in action with step-by-step comparisons and swaps.</p>
+                <a href="{% url 'sorting_visualizer' %}" class="btn btn-warning">Explore Sorting</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm interactive-card" data-structure="searching">
+            <div class="card-body text-center">
+                <div class="visual-container mb-3">
+                    <div class="search-visual">
+                        <div class="search-array">
+                            <div class="search-box">2</div>
+                            <div class="search-box">5</div>
+                            <div class="search-box target">8</div>
+                            <div class="search-box">12</div>
+                            <div class="search-box">15</div>
+                        </div>
+                        <div class="search-pointer">↑ Target: 8</div>
+                    </div>
+                    <div class="memory-representation">
+                        <small class="text-muted">Binary Search: O(log n) | Linear: O(n)</small>
+                    </div>
+                </div>
+                <h5 class="card-title">Searching Algorithms</h5>
+                <p class="card-text">Visualize linear and binary search with highlighted comparisons.</p>
+                <a href="{% url 'searching_visualizer' %}" class="btn btn-danger">Explore Searching</a>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm interactive-card" data-structure="bitwise">
+            <div class="card-body text-center">
+                <div class="visual-container mb-3">
+                    <div class="bitwise-visual">
+                        <i class="fas fa-microchip bitwise-icon"></i>
+                    </div>
+                    <div class="memory-representation">
+                        <small class="text-muted">AND | OR | XOR | Shifts | O(1)</small>
+                    </div>
+                </div>
+                <h5 class="card-title">Bitwise Operations</h5>
+                <p class="card-text">Visualize bitwise operations with binary representations and truth tables.</p>
+                <a href="{% url 'bitwise_visualizer' %}" class="btn btn-info">Explore Bitwise</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm interactive-card" data-structure="conversion">
+            <div class="card-body text-center">
+                <div class="visual-container mb-3">
+                    <div class="conversion-visual">
+                        <i class="fas fa-exchange-alt conversion-icon"></i>
+                    </div>
+                    <div class="memory-representation">
+                        <small class="text-muted">Dec↔Bin | Dec↔Oct | Dec↔Hex | O(log n)</small>
+                    </div>
+                </div>
+                <h5 class="card-title">Number Conversion</h5>
+                <p class="card-text">Convert between decimal, binary, octal, and hexadecimal with step-by-step process.</p>
+                <a href="{% url 'number_conversion_visualizer' %}" class="btn btn-dark">Explore Conversion</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Interactive hover animations
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.interactive-card');
+    
+    cards.forEach(card => {
+        const structure = card.dataset.structure;
+        
+        card.addEventListener('mouseenter', function() {
+            startAnimation(structure, card);
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            stopAnimation(structure, card);
+        });
+    });
+});
+
+function startAnimation(structure, card) {
+    switch(structure) {
+        case 'array':
+            animateArray(card);
+            break;
+        case 'linkedlist':
+            animateLinkedList(card);
+            break;
+        case 'stack':
+            animateStack(card);
+            break;
+        case 'queue':
+            animateQueue(card);
+            break;
+        case 'tree':
+            animateTree(card);
+            break;
+        case 'sorting':
+            animateSorting(card);
+            break;
+        case 'searching':
+            animateSearching(card);
+            break;
+        case 'graph':
+            animateGraph(card);
+            break;
+        case 'expression':
+            animateExpression(card);
+            break;
+        case 'evaluation':
+            animateEvaluation(card);
+            break;
+    }
+}
+
+function stopAnimation(structure, card) {
+    card.querySelectorAll('.animated').forEach(el => {
+        el.classList.remove('animated', 'highlight', 'active', 'traversing');
+    });
+}
+
+function animateArray(card) {
+    const boxes = card.querySelectorAll('.array-box');
+    boxes.forEach((box, index) => {
+        setTimeout(() => {
+            box.classList.add('animated', 'highlight');
+            setTimeout(() => box.classList.remove('highlight'), 300);
+        }, index * 200);
+    });
+}
+
+function animateLinkedList(card) {
+    const nodes = card.querySelectorAll('.ll-node');
+    const arrows = card.querySelectorAll('.arrow');
+    
+    nodes.forEach((node, index) => {
+        setTimeout(() => {
+            node.classList.add('animated', 'active');
+            if (arrows[index]) {
+                arrows[index].classList.add('animated', 'active');
+            }
+        }, index * 300);
+    });
+}
+
+function animateStack(card) {
+    const items = card.querySelectorAll('.stack-item');
+    items.forEach((item, index) => {
+        setTimeout(() => {
+            item.classList.add('animated', 'highlight');
+        }, (items.length - index - 1) * 200);
+    });
+}
+
+function animateQueue(card) {
+    const items = card.querySelectorAll('.queue-item');
+    items.forEach((item, index) => {
+        setTimeout(() => {
+            item.classList.add('animated', 'highlight');
+        }, index * 200);
+    });
+}
+
+function animateTree(card) {
+    const nodes = card.querySelectorAll('.tree-node-proper');
+    nodes.forEach((node, index) => {
+        setTimeout(() => {
+            node.classList.add('animated', 'traversing');
+        }, index * 150);
+    });
+}
+
+function animateSorting(card) {
+    const bars = card.querySelectorAll('.sort-bar');
+    bars.forEach((bar, index) => {
+        setTimeout(() => {
+            bar.classList.add('animated', 'highlight');
+        }, index * 100);
+    });
+}
+
+function animateSearching(card) {
+    const boxes = card.querySelectorAll('.search-box');
+    boxes.forEach((box, index) => {
+        setTimeout(() => {
+            box.classList.add('animated', 'highlight');
+            setTimeout(() => box.classList.remove('highlight'), 200);
+        }, index * 150);
+    });
+}
+
+function animateGraph(card) {
+    const nodes = card.querySelectorAll('.graph-node');
+    nodes.forEach((node, index) => {
+        setTimeout(() => {
+            node.classList.add('animated', 'traversing');
+        }, index * 200);
+    });
+}
+
+function animateExpression(card) {
+    const stackItems = card.querySelectorAll('.mini-stack-item');
+    stackItems.forEach((item, index) => {
+        setTimeout(() => {
+            item.classList.add('animated', 'highlight');
+        }, index * 300);
+    });
+}
+
+function animateEvaluation(card) {
+    const steps = card.querySelectorAll('.eval-step');
+    const stackItem = card.querySelector('.eval-stack-item');
+    
+    steps.forEach((step, index) => {
+        setTimeout(() => {
+            step.classList.add('animated', 'highlight');
+        }, index * 400);
+    });
+    
+    setTimeout(() => {
+        if (stackItem) stackItem.classList.add('animated', 'highlight');
+    }, steps.length * 400);
+}
+</script>
+{% endblock %}

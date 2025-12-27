@@ -1,0 +1,713 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AVL Tree Visualizer - DSA Buddy{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-balance-scale"></i> AVL Tree Operations</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Value to Insert/Delete</label>
+                    <input type="number" id="value" class="form-control" placeholder="Enter number">
+                </div>
+                
+                <button class="btn btn-info w-100" onclick="insertNode()">Insert Node</button>
+                <button class="btn btn-danger w-100 mt-2" onclick="deleteNode()">Delete Node</button>
+                <button class="btn btn-success w-100 mt-2" onclick="searchNode()">Search Node</button>
+                <button class="btn btn-warning w-100 mt-2" onclick="clearTree()">Clear Tree</button>
+                <button class="btn btn-secondary w-100 mt-2" onclick="loadSampleTree()">Load Sample</button>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Animation Controls</h6>
+            </div>
+            <div class="card-body">
+                <div class="btn-group w-100 mb-3">
+                    <button class="btn btn-success btn-sm" onclick="playAnimation()"><i class="fas fa-play"></i></button>
+                    <button class="btn btn-warning btn-sm" onclick="pauseAnimation()"><i class="fas fa-pause"></i></button>
+                    <button class="btn btn-info btn-sm" onclick="stepForward()"><i class="fas fa-step-forward"></i></button>
+                    <button class="btn btn-secondary btn-sm" onclick="resetAnimation()"><i class="fas fa-undo"></i></button>
+                </div>
+                
+                <div>
+                    <span id="currentStep" class="badge bg-info">Step: 0</span>
+                    <span id="totalSteps" class="badge bg-secondary">Total: 0</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Tree Info</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Nodes:</strong> <span id="nodeCount">0</span>
+                    </div>
+                    <div class="col-6">
+                        <strong>Height:</strong> <span id="treeHeight">0</span>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <strong>Balanced:</strong> <span id="isBalanced" class="badge bg-success">Yes</span>
+                </div>
+                <small class="text-muted mt-2 d-block">
+                    <strong>Insert/Delete:</strong> O(log n)<br>
+                    <strong>Search:</strong> O(log n)
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-eye"></i> AVL Tree Visualization</h5>
+            </div>
+            <div class="card-body">
+                <div id="treeContainer" style="min-height: 500px; border: 1px solid #ddd; border-radius: 8px; position: relative;">
+                    <!-- Tree will be rendered here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Step Information</h6>
+            </div>
+            <div class="card-body">
+                <div id="stepInfo">
+                    <strong>Ready:</strong> Insert nodes to build a self-balancing AVL tree.
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Rotation History</h6>
+            </div>
+            <div class="card-body">
+                <div id="rotationHistory">
+                    <strong>Rotations:</strong> <span id="rotationList">None</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+class AVLNode {
+    constructor(value) {
+        this.value = value;
+        this.left = null;
+        this.right = null;
+        this.height = 1;
+    }
+}
+
+class AVLTree {
+    constructor() {
+        this.root = null;
+        this.rotations = [];
+    }
+    
+    getHeight(node) {
+        return node ? node.height : 0;
+    }
+    
+    getBalance(node) {
+        return node ? this.getHeight(node.left) - this.getHeight(node.right) : 0;
+    }
+    
+    updateHeight(node) {
+        if (node) {
+            node.height = 1 + Math.max(this.getHeight(node.left), this.getHeight(node.right));
+        }
+    }
+    
+    rotateRight(y) {
+        const x = y.left;
+        const T2 = x.right;
+        
+        x.right = y;
+        y.left = T2;
+        
+        this.updateHeight(y);
+        this.updateHeight(x);
+        
+        this.rotations.push(`Right rotation at ${y.value}`);
+        animationSteps.push({
+            type: 'rotation',
+            rotationType: 'Right',
+            node: y.value,
+            description: `Right rotation at node ${y.value}`
+        });
+        
+        return x;
+    }
+    
+    rotateLeft(x) {
+        const y = x.right;
+        const T2 = y.left;
+        
+        y.left = x;
+        x.right = T2;
+        
+        this.updateHeight(x);
+        this.updateHeight(y);
+        
+        this.rotations.push(`Left rotation at ${x.value}`);
+        animationSteps.push({
+            type: 'rotation',
+            rotationType: 'Left',
+            node: x.value,
+            description: `Left rotation at node ${x.value}`
+        });
+        
+        return y;
+    }
+    
+    insert(value) {
+        this.root = this.insertNode(this.root, value);
+    }
+    
+    insertNode(node, value) {
+        if (!node) {
+            animationSteps.push({
+                type: 'insert',
+                value: value,
+                description: `Insert node ${value}`
+            });
+            return new AVLNode(value);
+        }
+        
+        if (value < node.value) {
+            node.left = this.insertNode(node.left, value);
+        } else if (value > node.value) {
+            node.right = this.insertNode(node.right, value);
+        } else {
+            return node;
+        }
+        
+        this.updateHeight(node);
+        
+        const balance = this.getBalance(node);
+        
+        animationSteps.push({
+            type: 'balance_check',
+            node: node.value,
+            balance: balance,
+            description: `Check balance at node ${node.value}: ${balance}`
+        });
+        
+        // Left Left Case
+        if (balance > 1 && value < node.left.value) {
+            animationSteps.push({
+                type: 'imbalance',
+                case: 'LL',
+                node: node.value,
+                description: `LL imbalance at node ${node.value}, performing right rotation`
+            });
+            return this.rotateRight(node);
+        }
+        
+        // Right Right Case
+        if (balance < -1 && value > node.right.value) {
+            animationSteps.push({
+                type: 'imbalance',
+                case: 'RR',
+                node: node.value,
+                description: `RR imbalance at node ${node.value}, performing left rotation`
+            });
+            return this.rotateLeft(node);
+        }
+        
+        // Left Right Case
+        if (balance > 1 && value > node.left.value) {
+            animationSteps.push({
+                type: 'imbalance',
+                case: 'LR',
+                node: node.value,
+                description: `LR imbalance at node ${node.value}, performing left-right rotation`
+            });
+            node.left = this.rotateLeft(node.left);
+            return this.rotateRight(node);
+        }
+        
+        // Right Left Case
+        if (balance < -1 && value < node.right.value) {
+            animationSteps.push({
+                type: 'imbalance',
+                case: 'RL',
+                node: node.value,
+                description: `RL imbalance at node ${node.value}, performing right-left rotation`
+            });
+            node.right = this.rotateRight(node.right);
+            return this.rotateLeft(node);
+        }
+        
+        return node;
+    }
+    
+    delete(value) {
+        this.root = this.deleteNode(this.root, value);
+    }
+    
+    deleteNode(node, value) {
+        if (!node) return node;
+        
+        if (value < node.value) {
+            node.left = this.deleteNode(node.left, value);
+        } else if (value > node.value) {
+            node.right = this.deleteNode(node.right, value);
+        } else {
+            animationSteps.push({
+                type: 'delete',
+                value: value,
+                description: `Delete node ${value}`
+            });
+            
+            if (!node.left || !node.right) {
+                const temp = node.left ? node.left : node.right;
+                if (!temp) {
+                    node = null;
+                } else {
+                    node = temp;
+                }
+            } else {
+                const temp = this.findMin(node.right);
+                node.value = temp.value;
+                node.right = this.deleteNode(node.right, temp.value);
+            }
+        }
+        
+        if (!node) return node;
+        
+        this.updateHeight(node);
+        
+        const balance = this.getBalance(node);
+        
+        animationSteps.push({
+            type: 'balance_check',
+            node: node.value,
+            balance: balance,
+            description: `Check balance at node ${node.value}: ${balance}`
+        });
+        
+        // Left Left Case
+        if (balance > 1 && this.getBalance(node.left) >= 0) {
+            return this.rotateRight(node);
+        }
+        
+        // Left Right Case
+        if (balance > 1 && this.getBalance(node.left) < 0) {
+            node.left = this.rotateLeft(node.left);
+            return this.rotateRight(node);
+        }
+        
+        // Right Right Case
+        if (balance < -1 && this.getBalance(node.right) <= 0) {
+            return this.rotateLeft(node);
+        }
+        
+        // Right Left Case
+        if (balance < -1 && this.getBalance(node.right) > 0) {
+            node.right = this.rotateRight(node.right);
+            return this.rotateLeft(node);
+        }
+        
+        return node;
+    }
+    
+    findMin(node) {
+        while (node.left) {
+            node = node.left;
+        }
+        return node;
+    }
+    
+    search(value) {
+        return this.searchNode(this.root, value);
+    }
+    
+    searchNode(node, value) {
+        if (!node || node.value === value) {
+            return node;
+        }
+        
+        if (value < node.value) {
+            return this.searchNode(node.left, value);
+        }
+        
+        return this.searchNode(node.right, value);
+    }
+    
+    getNodeCount() {
+        return this.countNodes(this.root);
+    }
+    
+    countNodes(node) {
+        if (!node) return 0;
+        return 1 + this.countNodes(node.left) + this.countNodes(node.right);
+    }
+    
+    getTreeHeight() {
+        return this.getHeight(this.root);
+    }
+    
+    isBalanced() {
+        return this.checkBalance(this.root);
+    }
+    
+    checkBalance(node) {
+        if (!node) return true;
+        
+        const balance = this.getBalance(node);
+        if (Math.abs(balance) > 1) return false;
+        
+        return this.checkBalance(node.left) && this.checkBalance(node.right);
+    }
+}
+
+let avl = new AVLTree();
+let animationSteps = [];
+let currentStep = 0;
+let isPlaying = false;
+let sampleIndex = 0;
+
+const sampleTrees = [
+    [10, 20, 30, 40, 50, 25],
+    [50, 25, 75, 10, 30, 60, 80],
+    [1, 2, 3, 4, 5, 6, 7],
+    [100, 50, 150, 25, 75, 125, 175]
+];
+
+function insertNode() {
+    const input = document.getElementById('value');
+    const value = parseInt(input.value);
+    
+    if (isNaN(value)) {
+        alert('Please enter a valid number');
+        return;
+    }
+    
+    animationSteps = [];
+    currentStep = 0;
+    
+    avl.insert(value);
+    input.value = '';
+    
+    renderTree();
+    updateTreeInfo();
+    updateRotationHistory();
+    updateStepCounter();
+    showMessage(`Inserted node ${value}. Click Play to see balancing steps.`);
+}
+
+function deleteNode() {
+    const input = document.getElementById('value');
+    const value = parseInt(input.value);
+    
+    if (isNaN(value)) {
+        alert('Please enter a valid number');
+        return;
+    }
+    
+    const found = avl.search(value);
+    if (!found) {
+        alert('Node not found in tree');
+        return;
+    }
+    
+    animationSteps = [];
+    currentStep = 0;
+    
+    avl.delete(value);
+    input.value = '';
+    
+    renderTree();
+    updateTreeInfo();
+    updateRotationHistory();
+    updateStepCounter();
+    showMessage(`Deleted node ${value}. Click Play to see balancing steps.`);
+}
+
+function searchNode() {
+    const input = document.getElementById('value');
+    const value = parseInt(input.value);
+    
+    if (isNaN(value)) {
+        alert('Please enter a valid number');
+        return;
+    }
+    
+    const found = avl.search(value);
+    if (found) {
+        showMessage(`Node ${value} found in tree`);
+        highlightNode(value, 'found');
+        setTimeout(() => resetHighlights(), 2000);
+    } else {
+        showMessage(`Node ${value} not found in tree`);
+    }
+}
+
+function clearTree() {
+    avl = new AVLTree();
+    animationSteps = [];
+    currentStep = 0;
+    renderTree();
+    updateTreeInfo();
+    updateRotationHistory();
+    showMessage('Tree cleared');
+}
+
+function loadSampleTree() {
+    clearTree();
+    
+    const values = sampleTrees[sampleIndex];
+    sampleIndex = (sampleIndex + 1) % sampleTrees.length;
+    
+    values.forEach(value => {
+        animationSteps = [];
+        avl.insert(value);
+    });
+    
+    renderTree();
+    updateTreeInfo();
+    updateRotationHistory();
+    showMessage(`Sample AVL tree ${sampleIndex} loaded`);
+}
+
+function renderTree() {
+    const container = document.getElementById('treeContainer');
+    container.innerHTML = '';
+    
+    if (!avl.root) {
+        container.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">Empty tree - Insert some nodes to visualize</div>';
+        return;
+    }
+    
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '500');
+    svg.style.background = '#f8f9fa';
+    
+    const positions = calculatePositions(avl.root, 400, 60, 200);
+    
+    drawEdges(svg, avl.root, positions);
+    drawNodes(svg, avl.root, positions);
+    
+    container.appendChild(svg);
+}
+
+function calculatePositions(node, x, y, spacing) {
+    const positions = new Map();
+    
+    function traverse(node, x, y, spacing) {
+        if (!node) return;
+        
+        positions.set(node.value, { x, y });
+        
+        if (node.left) {
+            traverse(node.left, x - spacing, y + 80, spacing * 0.6);
+        }
+        if (node.right) {
+            traverse(node.right, x + spacing, y + 80, spacing * 0.6);
+        }
+    }
+    
+    traverse(node, x, y, spacing);
+    return positions;
+}
+
+function drawEdges(svg, node, positions) {
+    if (!node) return;
+    
+    const pos = positions.get(node.value);
+    
+    if (node.left) {
+        const leftPos = positions.get(node.left.value);
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', pos.x);
+        line.setAttribute('y1', pos.y);
+        line.setAttribute('x2', leftPos.x);
+        line.setAttribute('y2', leftPos.y);
+        line.setAttribute('stroke', '#6c757d');
+        line.setAttribute('stroke-width', '2');
+        svg.appendChild(line);
+        
+        drawEdges(svg, node.left, positions);
+    }
+    
+    if (node.right) {
+        const rightPos = positions.get(node.right.value);
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', pos.x);
+        line.setAttribute('y1', pos.y);
+        line.setAttribute('x2', rightPos.x);
+        line.setAttribute('y2', rightPos.y);
+        line.setAttribute('stroke', '#6c757d');
+        line.setAttribute('stroke-width', '2');
+        svg.appendChild(line);
+        
+        drawEdges(svg, node.right, positions);
+    }
+}
+
+function drawNodes(svg, node, positions) {
+    if (!node) return;
+    
+    const pos = positions.get(node.value);
+    const balance = avl.getBalance(node);
+    
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', pos.x);
+    circle.setAttribute('cy', pos.y);
+    circle.setAttribute('r', '25');
+    circle.setAttribute('fill', '#28a745');
+    circle.setAttribute('stroke', '#1e7e34');
+    circle.setAttribute('stroke-width', '2');
+    circle.setAttribute('id', `node-${node.value}`);
+    
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', pos.x);
+    text.setAttribute('y', pos.y - 2);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('dominant-baseline', 'central');
+    text.setAttribute('fill', 'white');
+    text.setAttribute('font-weight', 'bold');
+    text.setAttribute('font-size', '12');
+    text.textContent = node.value;
+    
+    const balanceText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    balanceText.setAttribute('x', pos.x);
+    balanceText.setAttribute('y', pos.y + 8);
+    balanceText.setAttribute('text-anchor', 'middle');
+    balanceText.setAttribute('dominant-baseline', 'central');
+    balanceText.setAttribute('fill', '#000000');
+    balanceText.setAttribute('font-weight', 'bold');
+    balanceText.setAttribute('font-size', '8');
+    balanceText.textContent = `bf:${balance}`;
+    
+    svg.appendChild(circle);
+    svg.appendChild(text);
+    svg.appendChild(balanceText);
+    
+    drawNodes(svg, node.left, positions);
+    drawNodes(svg, node.right, positions);
+}
+
+function highlightNode(value, className) {
+    const node = document.getElementById(`node-${value}`);
+    if (node) {
+        node.setAttribute('fill', className === 'found' ? '#007bff' : '#ffc107');
+    }
+}
+
+function resetHighlights() {
+    document.querySelectorAll('[id^="node-"]').forEach(node => {
+        node.setAttribute('fill', '#28a745');
+    });
+}
+
+function updateTreeInfo() {
+    document.getElementById('nodeCount').textContent = avl.getNodeCount();
+    document.getElementById('treeHeight').textContent = avl.getTreeHeight();
+    
+    const balanced = avl.isBalanced();
+    const balancedBadge = document.getElementById('isBalanced');
+    balancedBadge.textContent = balanced ? 'Yes' : 'No';
+    balancedBadge.className = balanced ? 'badge bg-success' : 'badge bg-danger';
+}
+
+function updateRotationHistory() {
+    const rotationList = document.getElementById('rotationList');
+    if (avl.rotations.length === 0) {
+        rotationList.textContent = 'None';
+    } else {
+        rotationList.textContent = avl.rotations.slice(-5).join(', ');
+    }
+}
+
+function showMessage(message) {
+    document.getElementById('stepInfo').innerHTML = `<strong>${message}</strong>`;
+}
+
+function updateStepCounter() {
+    document.getElementById('currentStep').textContent = `Step: ${currentStep + 1}`;
+    document.getElementById('totalSteps').textContent = `Total: ${animationSteps.length}`;
+}
+
+function playAnimation() {
+    if (animationSteps.length === 0) {
+        alert('Please perform an operation first');
+        return;
+    }
+    isPlaying = true;
+    runAnimation();
+}
+
+function runAnimation() {
+    if (!isPlaying || currentStep >= animationSteps.length) {
+        isPlaying = false;
+        if (currentStep >= animationSteps.length) {
+            showMessage('Operation completed!');
+        }
+        return;
+    }
+    
+    const step = animationSteps[currentStep];
+    executeStep(step);
+    currentStep++;
+    updateStepCounter();
+    
+    setTimeout(() => {
+        if (isPlaying) runAnimation();
+    }, 1500);
+}
+
+function executeStep(step) {
+    showMessage(step.description);
+    renderTree();
+}
+
+function pauseAnimation() {
+    isPlaying = false;
+}
+
+function stepForward() {
+    if (currentStep < animationSteps.length) {
+        executeStep(animationSteps[currentStep]);
+        currentStep++;
+        updateStepCounter();
+        
+        if (currentStep >= animationSteps.length) {
+            showMessage('Operation completed!');
+        }
+    }
+}
+
+function resetAnimation() {
+    isPlaying = false;
+    currentStep = 0;
+    updateStepCounter();
+    resetHighlights();
+    showMessage('Animation reset');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    renderTree();
+    updateTreeInfo();
+    updateRotationHistory();
+    showMessage('Ready to build AVL tree. Insert some nodes.');
+});
+</script>
+{% endblock %}

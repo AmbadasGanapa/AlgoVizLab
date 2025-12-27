@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Array Visualizer - DSA Buddy{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-list"></i> Array Operations</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Array Size</label>
+                    <input type="number" id="arraySize" class="form-control" value="10" min="5" max="20">
+                    <button class="btn btn-secondary btn-sm mt-2" onclick="initializeArray()">Initialize</button>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Operation</label>
+                    <select id="operation" class="form-select">
+                        <option value="insert">Insert</option>
+                        <option value="delete">Delete</option>
+                        <option value="search">Search</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3" id="searchAlgoField" style="display:none;">
+                    <label class="form-label">Search Algorithm</label>
+                    <select id="searchAlgo" class="form-select">
+                        <option value="linear">Linear Search</option>
+                        <option value="binary">Binary Search</option>
+                        <option value="jump">Jump Search</option>
+                        <option value="interpolation">Interpolation Search</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3" id="indexField">
+                    <label class="form-label">Index</label>
+                    <input type="number" id="index" class="form-control" min="0">
+                </div>
+                
+                <div class="mb-3" id="valueField">
+                    <label class="form-label">Value</label>
+                    <input type="text" id="value" class="form-control">
+                </div>
+                
+                <button class="btn btn-primary w-100" onclick="performOperation()">Execute</button>
+                <button class="btn btn-warning w-100 mt-2" onclick="clearArray()">Clear Array</button>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Complexity</h6>
+            </div>
+            <div class="card-body">
+                <small id="complexityText">
+                    <strong>Insert:</strong> O(1)<br>
+                    <strong>Delete:</strong> O(1)<br>
+                    <strong>Linear Search:</strong> O(n)
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <h5><i class="fas fa-eye"></i> Array Visualization</h5>
+                <div id="status" class="badge bg-secondary">Ready</div>
+            </div>
+            <div class="card-body">
+                <div id="arrayContainer" class="d-flex justify-content-center align-items-center" style="min-height: 200px;">
+                    <div class="text-muted">Click "Initialize" to create an array</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Operation Log</h6>
+            </div>
+            <div class="card-body">
+                <div id="operationLog" style="max-height: 200px; overflow-y: auto;">
+                    <div class="text-muted">No operations performed yet</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/array-visualizer.js' %}"></script>
+{% endblock %}

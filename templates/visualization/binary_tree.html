@@ -1,0 +1,656 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Binary Tree Visualizer - DSA Buddy{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-sitemap"></i> Binary Tree Operations</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Value to Insert</label>
+                    <input type="number" id="value" class="form-control" placeholder="Enter number">
+                </div>
+                
+                <button class="btn btn-info w-100" onclick="insertNode()">Insert Node</button>
+                <button class="btn btn-danger w-100 mt-2" onclick="deleteNode()">Delete Node</button>
+                <button class="btn btn-success w-100 mt-2" onclick="searchNode()">Search Node</button>
+                <button class="btn btn-warning w-100 mt-2" onclick="clearTree()">Clear Tree</button>
+                <button class="btn btn-secondary w-100 mt-2" onclick="loadSampleTree()">Load Sample</button>
+                
+                <div class="mt-3">
+                    <label class="form-label">Traversal Type</label>
+                    <select id="traversalType" class="form-select">
+                        <option value="inorder">Inorder (L-Root-R)</option>
+                        <option value="preorder">Preorder (Root-L-R)</option>
+                        <option value="postorder">Postorder (L-R-Root)</option>
+                    </select>
+                    <button class="btn btn-primary w-100 mt-2" onclick="traverseTree()">Start Traversal</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Animation Controls</h6>
+            </div>
+            <div class="card-body">
+                <div class="btn-group w-100 mb-3">
+                    <button class="btn btn-success btn-sm" onclick="playAnimation()"><i class="fas fa-play"></i></button>
+                    <button class="btn btn-warning btn-sm" onclick="pauseAnimation()"><i class="fas fa-pause"></i></button>
+                    <button class="btn btn-info btn-sm" onclick="stepForward()"><i class="fas fa-step-forward"></i></button>
+                    <button class="btn btn-secondary btn-sm" onclick="resetAnimation()"><i class="fas fa-undo"></i></button>
+                </div>
+                
+                <div>
+                    <span id="currentStep" class="badge bg-info">Step: 0</span>
+                    <span id="totalSteps" class="badge bg-secondary">Total: 0</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Tree Info</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Nodes:</strong> <span id="nodeCount">0</span>
+                    </div>
+                    <div class="col-6">
+                        <strong>Height:</strong> <span id="treeHeight">0</span>
+                    </div>
+                </div>
+                <small class="text-muted mt-2 d-block">
+                    <strong>Insert:</strong> O(log n) avg<br>
+                    <strong>Search:</strong> O(log n) avg
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-eye"></i> Binary Search Tree Visualization</h5>
+            </div>
+            <div class="card-body">
+                <div id="treeContainer" style="min-height: 500px; border: 1px solid #ddd; border-radius: 8px; position: relative;">
+                    <!-- Tree will be rendered here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Step Information</h6>
+            </div>
+            <div class="card-body">
+                <div id="stepInfo">
+                    <strong>Ready:</strong> Insert nodes to build a binary search tree.
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Traversal Result</h6>
+            </div>
+            <div class="card-body">
+                <div id="traversalResult">
+                    <strong>Result:</strong> <span id="traversalOutput">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Binary Search Tree Implementation
+class TreeNode {
+    constructor(value) {
+        this.value = value;
+        this.left = null;
+        this.right = null;
+    }
+}
+
+class BST {
+    constructor() {
+        this.root = null;
+    }
+    
+    insert(value) {
+        this.root = this.insertNode(this.root, value);
+    }
+    
+    insertNode(node, value) {
+        if (node === null) {
+            return new TreeNode(value);
+        }
+        
+        if (value < node.value) {
+            node.left = this.insertNode(node.left, value);
+        } else if (value > node.value) {
+            node.right = this.insertNode(node.right, value);
+        }
+        
+        return node;
+    }
+    
+    delete(value) {
+        this.root = this.deleteNode(this.root, value);
+    }
+    
+    deleteNode(node, value) {
+        if (node === null) return null;
+        
+        if (value < node.value) {
+            node.left = this.deleteNode(node.left, value);
+        } else if (value > node.value) {
+            node.right = this.deleteNode(node.right, value);
+        } else {
+            if (node.left === null) return node.right;
+            if (node.right === null) return node.left;
+            
+            node.value = this.findMin(node.right);
+            node.right = this.deleteNode(node.right, node.value);
+        }
+        
+        return node;
+    }
+    
+    findMin(node) {
+        while (node.left !== null) {
+            node = node.left;
+        }
+        return node.value;
+    }
+    
+    search(value) {
+        return this.searchNode(this.root, value);
+    }
+    
+    searchNode(node, value) {
+        if (node === null || node.value === value) {
+            return node;
+        }
+        
+        if (value < node.value) {
+            return this.searchNode(node.left, value);
+        }
+        
+        return this.searchNode(node.right, value);
+    }
+    
+    inorder() {
+        const result = [];
+        this.inorderTraversal(this.root, result);
+        return result;
+    }
+    
+    inorderTraversal(node, result) {
+        if (node !== null) {
+            this.inorderTraversal(node.left, result);
+            result.push(node.value);
+            this.inorderTraversal(node.right, result);
+        }
+    }
+    
+    preorder() {
+        const result = [];
+        this.preorderTraversal(this.root, result);
+        return result;
+    }
+    
+    preorderTraversal(node, result) {
+        if (node !== null) {
+            result.push(node.value);
+            this.preorderTraversal(node.left, result);
+            this.preorderTraversal(node.right, result);
+        }
+    }
+    
+    postorder() {
+        const result = [];
+        this.postorderTraversal(this.root, result);
+        return result;
+    }
+    
+    postorderTraversal(node, result) {
+        if (node !== null) {
+            this.postorderTraversal(node.left, result);
+            this.postorderTraversal(node.right, result);
+            result.push(node.value);
+        }
+    }
+    
+    getNodeHeight(node) {
+        if (node === null) return -1;
+        const leftHeight = this.getNodeHeight(node.left);
+        const rightHeight = this.getNodeHeight(node.right);
+        return Math.max(leftHeight, rightHeight) + 1;
+    }
+    
+    getBalanceFactor(node) {
+        if (node === null) return 0;
+        return this.getNodeHeight(node.left) - this.getNodeHeight(node.right);
+    }
+    
+    getHeight() {
+        return this.calculateHeight(this.root);
+    }
+    
+    calculateHeight(node) {
+        if (node === null) return 0;
+        return 1 + Math.max(this.calculateHeight(node.left), this.calculateHeight(node.right));
+    }
+    
+    getNodeCount() {
+        return this.countNodes(this.root);
+    }
+    
+    countNodes(node) {
+        if (node === null) return 0;
+        return 1 + this.countNodes(node.left) + this.countNodes(node.right);
+    }
+}
+
+// Global variables
+let bst = new BST();
+let animationSteps = [];
+let currentStep = 0;
+let isPlaying = false;
+let sampleIndex = 0;
+
+const sampleTrees = [
+    [50, 30, 70, 20, 40, 60, 80],  // 7 nodes - balanced
+    [25, 15, 35, 10, 20, 30, 40, 5, 12],  // 9 nodes - balanced
+    [100, 50, 150, 25, 75, 125, 175, 10, 30, 60, 90],  // 11 nodes - balanced
+    [10, 5, 15, 3, 7, 12, 18, 1, 4, 6, 8, 11, 13, 16, 20],  // 15 nodes - complete
+    [60, 30, 90, 15, 45, 75, 105, 10, 20, 40, 50],  // 11 nodes - mixed
+    [80, 40, 120, 20, 60, 100, 140, 10, 30, 50, 70, 90, 110, 130, 150],  // 15 nodes - complete
+    [35, 20, 55, 10, 25, 45, 65, 5, 15, 22, 30, 40, 50, 60, 70],  // 15 nodes - balanced
+    [42, 21, 63, 14, 28, 56, 84, 7, 17, 24, 35, 49, 70, 77, 91]  // 15 nodes - mixed
+];
+
+function insertNode() {
+    const input = document.getElementById('value');
+    const value = parseInt(input.value);
+    
+    if (isNaN(value)) {
+        alert('Please enter a valid number');
+        return;
+    }
+    
+    bst.insert(value);
+    input.value = '';
+    
+    renderTree();
+    updateTreeInfo();
+    showMessage(`Inserted node ${value}`);
+}
+
+function deleteNode() {
+    const input = document.getElementById('value');
+    const value = parseInt(input.value);
+    
+    if (isNaN(value)) {
+        alert('Please enter a valid number');
+        return;
+    }
+    
+    const found = bst.search(value);
+    if (!found) {
+        alert('Node not found in tree');
+        return;
+    }
+    
+    bst.delete(value);
+    input.value = '';
+    
+    renderTree();
+    updateTreeInfo();
+    showMessage(`Deleted node ${value}`);
+}
+
+function searchNode() {
+    const input = document.getElementById('value');
+    const value = parseInt(input.value);
+    
+    if (isNaN(value)) {
+        alert('Please enter a valid number');
+        return;
+    }
+    
+    const found = bst.search(value);
+    if (found) {
+        showMessage(`Node ${value} found in tree`);
+        highlightNode(value, 'found');
+        setTimeout(() => resetHighlights(), 2000);
+    } else {
+        showMessage(`Node ${value} not found in tree`);
+    }
+}
+
+function clearTree() {
+    bst = new BST();
+    animationSteps = [];
+    currentStep = 0;
+    renderTree();
+    updateTreeInfo();
+    showMessage('Tree cleared');
+    document.getElementById('traversalOutput').textContent = '-';
+}
+
+function loadSampleTree() {
+    clearTree();
+    
+    const values = sampleTrees[sampleIndex];
+    sampleIndex = (sampleIndex + 1) % sampleTrees.length;
+    
+    values.forEach(value => bst.insert(value));
+    renderTree();
+    updateTreeInfo();
+    showMessage(`Sample tree ${sampleIndex} loaded`);
+}
+
+
+
+function traverseTree() {
+    const traversalType = document.getElementById('traversalType').value;
+    
+    if (bst.root === null) {
+        alert('Please insert some nodes first');
+        return;
+    }
+    
+    let result;
+    if (traversalType === 'inorder') {
+        result = bst.inorder();
+        animationSteps = generateTraversalSteps('inorder');
+    } else if (traversalType === 'preorder') {
+        result = bst.preorder();
+        animationSteps = generateTraversalSteps('preorder');
+    } else {
+        result = bst.postorder();
+        animationSteps = generateTraversalSteps('postorder');
+    }
+    
+    document.getElementById('traversalOutput').textContent = result.join(' → ');
+    currentStep = 0;
+    updateStepCounter();
+    showMessage(`${traversalType.toUpperCase()} traversal ready. Click Play to start animation.`);
+}
+
+function generateTraversalSteps(type) {
+    const steps = [];
+    
+    if (type === 'inorder') {
+        generateInorderSteps(bst.root, steps);
+    } else if (type === 'preorder') {
+        generatePreorderSteps(bst.root, steps);
+    } else {
+        generatePostorderSteps(bst.root, steps);
+    }
+    
+    return steps;
+}
+
+function generateInorderSteps(node, steps) {
+    if (node !== null) {
+        generateInorderSteps(node.left, steps);
+        steps.push({ action: 'visit', value: node.value, description: `Visit node ${node.value}` });
+        generateInorderSteps(node.right, steps);
+    }
+}
+
+function generatePreorderSteps(node, steps) {
+    if (node !== null) {
+        steps.push({ action: 'visit', value: node.value, description: `Visit node ${node.value}` });
+        generatePreorderSteps(node.left, steps);
+        generatePreorderSteps(node.right, steps);
+    }
+}
+
+function generatePostorderSteps(node, steps) {
+    if (node !== null) {
+        generatePostorderSteps(node.left, steps);
+        generatePostorderSteps(node.right, steps);
+        steps.push({ action: 'visit', value: node.value, description: `Visit node ${node.value}` });
+    }
+}
+
+function renderTree() {
+    const container = document.getElementById('treeContainer');
+    container.innerHTML = '';
+    
+    if (bst.root === null) {
+        container.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">Empty tree - Insert some nodes to visualize</div>';
+        return;
+    }
+    
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '500');
+    svg.style.background = '#f8f9fa';
+    
+    // Add tree height display
+    const heightText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    heightText.setAttribute('x', '750');
+    heightText.setAttribute('y', '30');
+    heightText.setAttribute('text-anchor', 'end');
+    heightText.setAttribute('fill', '#dc3545');
+    heightText.setAttribute('font-weight', 'bold');
+    heightText.setAttribute('font-size', '16');
+    heightText.textContent = `Tree Height: ${bst.getHeight()}`;
+    svg.appendChild(heightText);
+    
+    const positions = calculatePositions(bst.root, 400, 60, 200);
+    
+    // Draw edges
+    drawEdges(svg, bst.root, positions);
+    
+    // Draw nodes with heights
+    drawNodesWithHeight(svg, bst.root, positions);
+    
+    container.appendChild(svg);
+}
+
+function calculatePositions(node, x, y, spacing) {
+    const positions = new Map();
+    
+    function traverse(node, x, y, spacing) {
+        if (node === null) return;
+        
+        positions.set(node.value, { x, y });
+        
+        if (node.left) {
+            traverse(node.left, x - spacing, y + 80, spacing * 0.6);
+        }
+        if (node.right) {
+            traverse(node.right, x + spacing, y + 80, spacing * 0.6);
+        }
+    }
+    
+    traverse(node, x, y, spacing);
+    return positions;
+}
+
+function drawEdges(svg, node, positions) {
+    if (node === null) return;
+    
+    const pos = positions.get(node.value);
+    
+    if (node.left) {
+        const leftPos = positions.get(node.left.value);
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', pos.x);
+        line.setAttribute('y1', pos.y);
+        line.setAttribute('x2', leftPos.x);
+        line.setAttribute('y2', leftPos.y);
+        line.setAttribute('stroke', '#6c757d');
+        line.setAttribute('stroke-width', '2');
+        svg.appendChild(line);
+        
+        drawEdges(svg, node.left, positions);
+    }
+    
+    if (node.right) {
+        const rightPos = positions.get(node.right.value);
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', pos.x);
+        line.setAttribute('y1', pos.y);
+        line.setAttribute('x2', rightPos.x);
+        line.setAttribute('y2', rightPos.y);
+        line.setAttribute('stroke', '#6c757d');
+        line.setAttribute('stroke-width', '2');
+        svg.appendChild(line);
+        
+        drawEdges(svg, node.right, positions);
+    }
+}
+
+function drawNodesWithHeight(svg, node, positions) {
+    if (node === null) return;
+    
+    const pos = positions.get(node.value);
+    const balanceFactor = bst.getBalanceFactor(node);
+    
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', pos.x);
+    circle.setAttribute('cy', pos.y);
+    circle.setAttribute('r', '25');
+    circle.setAttribute('fill', '#007bff');
+    circle.setAttribute('stroke', '#0056b3');
+    circle.setAttribute('stroke-width', '2');
+    circle.setAttribute('id', `node-${node.value}`);
+    
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', pos.x);
+    text.setAttribute('y', pos.y - 2);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('dominant-baseline', 'central');
+    text.setAttribute('fill', 'white');
+    text.setAttribute('font-weight', 'bold');
+    text.setAttribute('font-size', '12');
+    text.textContent = node.value;
+    
+    // Balance factor label
+    const balanceText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    balanceText.setAttribute('x', pos.x);
+    balanceText.setAttribute('y', pos.y + 8);
+    balanceText.setAttribute('text-anchor', 'middle');
+    balanceText.setAttribute('dominant-baseline', 'central');
+    balanceText.setAttribute('fill', '#000000');
+    balanceText.setAttribute('font-weight', 'bold');
+    balanceText.setAttribute('font-size', '8');
+    balanceText.textContent = `bf:${balanceFactor}`;
+    
+    svg.appendChild(circle);
+    svg.appendChild(text);
+    svg.appendChild(balanceText);
+    
+    drawNodesWithHeight(svg, node.left, positions);
+    drawNodesWithHeight(svg, node.right, positions);
+}
+
+function highlightNode(value, className) {
+    const node = document.getElementById(`node-${value}`);
+    if (node) {
+        node.setAttribute('fill', className === 'found' ? '#28a745' : '#ffc107');
+    }
+}
+
+function resetHighlights() {
+    document.querySelectorAll('[id^="node-"]').forEach(node => {
+        node.setAttribute('fill', '#007bff');
+    });
+}
+
+function updateTreeInfo() {
+    document.getElementById('nodeCount').textContent = bst.getNodeCount();
+    document.getElementById('treeHeight').textContent = bst.getHeight();
+}
+
+function showMessage(message) {
+    document.getElementById('stepInfo').innerHTML = `<strong>${message}</strong>`;
+}
+
+function updateStepCounter() {
+    document.getElementById('currentStep').textContent = `Step: ${currentStep + 1}`;
+    document.getElementById('totalSteps').textContent = `Total: ${animationSteps.length}`;
+}
+
+// Animation functions
+function playAnimation() {
+    if (animationSteps.length === 0) {
+        alert('Please start traversal first');
+        return;
+    }
+    isPlaying = true;
+    runAnimation();
+}
+
+function runAnimation() {
+    if (!isPlaying || currentStep >= animationSteps.length) {
+        isPlaying = false;
+        if (currentStep >= animationSteps.length) {
+            showMessage('Traversal completed!');
+        }
+        return;
+    }
+    
+    const step = animationSteps[currentStep];
+    executeStep(step);
+    currentStep++;
+    updateStepCounter();
+    
+    setTimeout(() => {
+        if (isPlaying) runAnimation();
+    }, 1000);
+}
+
+function executeStep(step) {
+    showMessage(step.description);
+    resetHighlights();
+    highlightNode(step.value, 'visiting');
+}
+
+function pauseAnimation() {
+    isPlaying = false;
+}
+
+function stepForward() {
+    if (currentStep < animationSteps.length) {
+        executeStep(animationSteps[currentStep]);
+        currentStep++;
+        updateStepCounter();
+        
+        if (currentStep >= animationSteps.length) {
+            showMessage('Traversal completed!');
+        }
+    }
+}
+
+function resetAnimation() {
+    isPlaying = false;
+    currentStep = 0;
+    updateStepCounter();
+    resetHighlights();
+    showMessage('Animation reset');
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    renderTree();
+    updateTreeInfo();
+    showMessage('Ready to build binary search tree. Insert some nodes.');
+});
+</script>
+{% endblock %}

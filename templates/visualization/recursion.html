@@ -1,0 +1,473 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Recursion Visualizer - DSA Buddy{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-layer-group"></i> Recursion Functions</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Function Type</label>
+                    <select id="functionType" class="form-select">
+                        <option value="factorial">Factorial</option>
+                        <option value="fibonacci">Fibonacci</option>
+                        <option value="power">Power (a^n)</option>
+                        <option value="gcd">GCD</option>
+                        <option value="towerOfHanoi">Tower of Hanoi</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Input Value</label>
+                    <input type="number" id="inputValue" class="form-control" placeholder="Enter number" value="5">
+                </div>
+                
+                <div id="secondInput" class="mb-3" style="display: none;">
+                    <label class="form-label">Second Value</label>
+                    <input type="number" id="inputValue2" class="form-control" placeholder="Enter second number" value="3">
+                </div>
+                
+                <button class="btn btn-primary w-100" onclick="startRecursion()">Start Recursion</button>
+                <button class="btn btn-warning w-100 mt-2" onclick="clearVisualization()">Clear</button>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Animation Controls</h6>
+            </div>
+            <div class="card-body">
+                <div class="btn-group w-100 mb-3">
+                    <button class="btn btn-success btn-sm" onclick="playAnimation()"><i class="fas fa-play"></i></button>
+                    <button class="btn btn-warning btn-sm" onclick="pauseAnimation()"><i class="fas fa-pause"></i></button>
+                    <button class="btn btn-info btn-sm" onclick="stepForward()"><i class="fas fa-step-forward"></i></button>
+                    <button class="btn btn-secondary btn-sm" onclick="resetAnimation()"><i class="fas fa-undo"></i></button>
+                </div>
+                
+                <div>
+                    <span id="currentStep" class="badge bg-info">Step: 0</span>
+                    <span id="totalSteps" class="badge bg-secondary">Total: 0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-eye"></i> Call Stack Visualization</h5>
+            </div>
+            <div class="card-body">
+                <div id="callStackContainer" style="min-height: 400px; border: 1px solid #ddd; border-radius: 8px; position: relative; overflow-y: auto;">
+                    <!-- Call stack will be rendered here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Step Information</h6>
+            </div>
+            <div class="card-body">
+                <div id="stepInfo">
+                    <strong>Ready:</strong> Select a function and input to visualize recursion.
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Result</h6>
+            </div>
+            <div class="card-body">
+                <div id="resultInfo">
+                    <strong>Result:</strong> <span id="finalResult">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let animationSteps = [];
+let currentStep = 0;
+let isPlaying = false;
+
+document.getElementById('functionType').addEventListener('change', function() {
+    const funcType = this.value;
+    const secondInput = document.getElementById('secondInput');
+    
+    if (funcType === 'power' || funcType === 'gcd') {
+        secondInput.style.display = 'block';
+    } else {
+        secondInput.style.display = 'none';
+    }
+});
+
+function startRecursion() {
+    const funcType = document.getElementById('functionType').value;
+    const input1 = parseInt(document.getElementById('inputValue').value);
+    const input2 = parseInt(document.getElementById('inputValue2').value);
+    
+    if (isNaN(input1) || input1 < 0) {
+        alert('Please enter a valid positive number');
+        return;
+    }
+    
+    animationSteps = [];
+    currentStep = 0;
+    
+    let result;
+    switch(funcType) {
+        case 'factorial':
+            result = factorial(input1, []);
+            break;
+        case 'fibonacci':
+            result = fibonacci(input1, []);
+            break;
+        case 'power':
+            if (isNaN(input2)) {
+                alert('Please enter a valid second number');
+                return;
+            }
+            result = power(input1, input2, []);
+            break;
+        case 'gcd':
+            if (isNaN(input2)) {
+                alert('Please enter a valid second number');
+                return;
+            }
+            result = gcd(input1, input2, []);
+            break;
+        case 'towerOfHanoi':
+            result = towerOfHanoi(input1, 'A', 'C', 'B', []);
+            break;
+    }
+    
+    document.getElementById('finalResult').textContent = result;
+    updateStepCounter();
+    showMessage(`${funcType.toUpperCase()} recursion ready. Click Play to start animation.`);
+}
+
+function factorial(n, callStack) {
+    const step = {
+        type: 'call',
+        function: 'factorial',
+        params: [n],
+        description: `Call factorial(${n})`,
+        callStack: [...callStack, `factorial(${n})`]
+    };
+    animationSteps.push(step);
+    
+    if (n <= 1) {
+        const returnStep = {
+            type: 'return',
+            function: 'factorial',
+            params: [n],
+            result: 1,
+            description: `Base case: factorial(${n}) = 1`,
+            callStack: [...callStack, `factorial(${n})`]
+        };
+        animationSteps.push(returnStep);
+        return 1;
+    }
+    
+    const result = n * factorial(n - 1, [...callStack, `factorial(${n})`]);
+    
+    const returnStep = {
+        type: 'return',
+        function: 'factorial',
+        params: [n],
+        result: result,
+        description: `Return: factorial(${n}) = ${n} * factorial(${n-1}) = ${result}`,
+        callStack: [...callStack, `factorial(${n})`]
+    };
+    animationSteps.push(returnStep);
+    
+    return result;
+}
+
+function fibonacci(n, callStack) {
+    const step = {
+        type: 'call',
+        function: 'fibonacci',
+        params: [n],
+        description: `Call fibonacci(${n})`,
+        callStack: [...callStack, `fibonacci(${n})`]
+    };
+    animationSteps.push(step);
+    
+    if (n <= 1) {
+        const returnStep = {
+            type: 'return',
+            function: 'fibonacci',
+            params: [n],
+            result: n,
+            description: `Base case: fibonacci(${n}) = ${n}`,
+            callStack: [...callStack, `fibonacci(${n})`]
+        };
+        animationSteps.push(returnStep);
+        return n;
+    }
+    
+    const result = fibonacci(n - 1, [...callStack, `fibonacci(${n})`]) + fibonacci(n - 2, [...callStack, `fibonacci(${n})`]);
+    
+    const returnStep = {
+        type: 'return',
+        function: 'fibonacci',
+        params: [n],
+        result: result,
+        description: `Return: fibonacci(${n}) = fibonacci(${n-1}) + fibonacci(${n-2}) = ${result}`,
+        callStack: [...callStack, `fibonacci(${n})`]
+    };
+    animationSteps.push(returnStep);
+    
+    return result;
+}
+
+function power(base, exp, callStack) {
+    const step = {
+        type: 'call',
+        function: 'power',
+        params: [base, exp],
+        description: `Call power(${base}, ${exp})`,
+        callStack: [...callStack, `power(${base}, ${exp})`]
+    };
+    animationSteps.push(step);
+    
+    if (exp === 0) {
+        const returnStep = {
+            type: 'return',
+            function: 'power',
+            params: [base, exp],
+            result: 1,
+            description: `Base case: power(${base}, 0) = 1`,
+            callStack: [...callStack, `power(${base}, ${exp})`]
+        };
+        animationSteps.push(returnStep);
+        return 1;
+    }
+    
+    const result = base * power(base, exp - 1, [...callStack, `power(${base}, ${exp})`]);
+    
+    const returnStep = {
+        type: 'return',
+        function: 'power',
+        params: [base, exp],
+        result: result,
+        description: `Return: power(${base}, ${exp}) = ${base} * power(${base}, ${exp-1}) = ${result}`,
+        callStack: [...callStack, `power(${base}, ${exp})`]
+    };
+    animationSteps.push(returnStep);
+    
+    return result;
+}
+
+function gcd(a, b, callStack) {
+    const step = {
+        type: 'call',
+        function: 'gcd',
+        params: [a, b],
+        description: `Call gcd(${a}, ${b})`,
+        callStack: [...callStack, `gcd(${a}, ${b})`]
+    };
+    animationSteps.push(step);
+    
+    if (b === 0) {
+        const returnStep = {
+            type: 'return',
+            function: 'gcd',
+            params: [a, b],
+            result: a,
+            description: `Base case: gcd(${a}, 0) = ${a}`,
+            callStack: [...callStack, `gcd(${a}, ${b})`]
+        };
+        animationSteps.push(returnStep);
+        return a;
+    }
+    
+    const result = gcd(b, a % b, [...callStack, `gcd(${a}, ${b})`]);
+    
+    const returnStep = {
+        type: 'return',
+        function: 'gcd',
+        params: [a, b],
+        result: result,
+        description: `Return: gcd(${a}, ${b}) = gcd(${b}, ${a % b}) = ${result}`,
+        callStack: [...callStack, `gcd(${a}, ${b})`]
+    };
+    animationSteps.push(returnStep);
+    
+    return result;
+}
+
+function towerOfHanoi(n, from, to, aux, callStack) {
+    const step = {
+        type: 'call',
+        function: 'hanoi',
+        params: [n, from, to, aux],
+        description: `Move ${n} disks from ${from} to ${to} using ${aux}`,
+        callStack: [...callStack, `hanoi(${n}, ${from}, ${to}, ${aux})`]
+    };
+    animationSteps.push(step);
+    
+    if (n === 1) {
+        const returnStep = {
+            type: 'return',
+            function: 'hanoi',
+            params: [n, from, to, aux],
+            result: `Move disk 1 from ${from} to ${to}`,
+            description: `Base case: Move disk 1 from ${from} to ${to}`,
+            callStack: [...callStack, `hanoi(${n}, ${from}, ${to}, ${aux})`]
+        };
+        animationSteps.push(returnStep);
+        return 1;
+    }
+    
+    towerOfHanoi(n - 1, from, aux, to, [...callStack, `hanoi(${n}, ${from}, ${to}, ${aux})`]);
+    
+    const moveStep = {
+        type: 'move',
+        function: 'hanoi',
+        params: [n, from, to, aux],
+        result: `Move disk ${n} from ${from} to ${to}`,
+        description: `Move disk ${n} from ${from} to ${to}`,
+        callStack: [...callStack, `hanoi(${n}, ${from}, ${to}, ${aux})`]
+    };
+    animationSteps.push(moveStep);
+    
+    towerOfHanoi(n - 1, aux, to, from, [...callStack, `hanoi(${n}, ${from}, ${to}, ${aux})`]);
+    
+    const returnStep = {
+        type: 'return',
+        function: 'hanoi',
+        params: [n, from, to, aux],
+        result: `Completed moving ${n} disks`,
+        description: `Completed moving ${n} disks from ${from} to ${to}`,
+        callStack: [...callStack, `hanoi(${n}, ${from}, ${to}, ${aux})`]
+    };
+    animationSteps.push(returnStep);
+    
+    return Math.pow(2, n) - 1;
+}
+
+function renderCallStack(callStack) {
+    const container = document.getElementById('callStackContainer');
+    container.innerHTML = '';
+    
+    if (callStack.length === 0) {
+        container.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">No active calls</div>';
+        return;
+    }
+    
+    callStack.forEach((call, index) => {
+        const frame = document.createElement('div');
+        frame.className = 'call-frame';
+        frame.style.cssText = `
+            background: ${index === callStack.length - 1 ? '#007bff' : '#6c757d'};
+            color: white;
+            padding: 10px 15px;
+            margin: 5px 20px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-weight: bold;
+            position: relative;
+            margin-left: ${20 + index * 30}px;
+        `;
+        
+        frame.textContent = call;
+        
+        if (index === callStack.length - 1) {
+            frame.style.boxShadow = '0 0 10px rgba(0,123,255,0.5)';
+        }
+        
+        container.appendChild(frame);
+    });
+}
+
+function clearVisualization() {
+    animationSteps = [];
+    currentStep = 0;
+    document.getElementById('callStackContainer').innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">No active calls</div>';
+    document.getElementById('finalResult').textContent = '-';
+    updateStepCounter();
+    showMessage('Visualization cleared');
+}
+
+function showMessage(message) {
+    document.getElementById('stepInfo').innerHTML = `<strong>${message}</strong>`;
+}
+
+function updateStepCounter() {
+    document.getElementById('currentStep').textContent = `Step: ${currentStep + 1}`;
+    document.getElementById('totalSteps').textContent = `Total: ${animationSteps.length}`;
+}
+
+function playAnimation() {
+    if (animationSteps.length === 0) {
+        alert('Please start recursion first');
+        return;
+    }
+    isPlaying = true;
+    runAnimation();
+}
+
+function runAnimation() {
+    if (!isPlaying || currentStep >= animationSteps.length) {
+        isPlaying = false;
+        if (currentStep >= animationSteps.length) {
+            showMessage('Recursion completed!');
+        }
+        return;
+    }
+    
+    const step = animationSteps[currentStep];
+    executeStep(step);
+    currentStep++;
+    updateStepCounter();
+    
+    setTimeout(() => {
+        if (isPlaying) runAnimation();
+    }, 1500);
+}
+
+function executeStep(step) {
+    showMessage(step.description);
+    renderCallStack(step.callStack);
+}
+
+function pauseAnimation() {
+    isPlaying = false;
+}
+
+function stepForward() {
+    if (currentStep < animationSteps.length) {
+        executeStep(animationSteps[currentStep]);
+        currentStep++;
+        updateStepCounter();
+        
+        if (currentStep >= animationSteps.length) {
+            showMessage('Recursion completed!');
+        }
+    }
+}
+
+function resetAnimation() {
+    isPlaying = false;
+    currentStep = 0;
+    updateStepCounter();
+    clearVisualization();
+    showMessage('Animation reset');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    clearVisualization();
+    showMessage('Ready to visualize recursion. Select a function and input.');
+});
+</script>
+{% endblock %}
